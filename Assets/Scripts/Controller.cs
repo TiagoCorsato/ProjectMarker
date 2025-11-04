@@ -53,7 +53,6 @@ public class Controller : MonoBehaviour
 
         if (TryGetWorldThrow(swipe, swipeThreshold, out var dirWorld, out var power))
         {
-            
             Marker.Instance.Throw(dirWorld, power);
         }
     }
@@ -72,7 +71,8 @@ public class Controller : MonoBehaviour
 
     private static bool TryGetWorldThrow(Vector2 swipe, float minPixels, out Vector3 dir, out float power01)
     {
-        dir = Vector3.zero; power01 = 0f;
+        dir = Vector3.zero; 
+        power01 = 0f;
         if (swipe.sqrMagnitude < minPixels * minPixels) return false;
 
         var planar = swipe.normalized;                      // continuous 2d
