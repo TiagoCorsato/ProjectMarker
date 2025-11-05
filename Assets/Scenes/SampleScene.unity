@@ -641,6 +641,7 @@ GameObject:
   - component: {fileID: 726538341}
   - component: {fileID: 726538343}
   - component: {fileID: 726538342}
+  - component: {fileID: 726538344}
   m_Layer: 0
   m_Name: GreenMarker
   m_TagString: ThrowObject
@@ -763,7 +764,7 @@ SphereCollider:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 726538338}
-  m_Material: {fileID: 0}
+  m_Material: {fileID: 13400000, guid: bcd596ee0abc50f47bf32f77e1ed4e4e, type: 2}
   m_IncludeLayers:
     serializedVersion: 2
     m_Bits: 0
@@ -775,7 +776,7 @@ SphereCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Radius: 0.4
+  m_Radius: 0.35
   m_Center: {x: 0, y: -2.51, z: 0}
 --- !u!136 &726538343
 CapsuleCollider:
@@ -796,10 +797,31 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 1
+  m_Radius: 0.96
   m_Height: 5.4
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!135 &726538344
+SphereCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 726538338}
+  m_Material: {fileID: 13400000, guid: bcd596ee0abc50f47bf32f77e1ed4e4e, type: 2}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 1
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Radius: 0.35
+  m_Center: {x: 0, y: -1.87, z: 0}
 --- !u!1 &735746728
 GameObject:
   m_ObjectHideFlags: 0
@@ -1107,6 +1129,7 @@ GameObject:
   - component: {fileID: 862761179}
   - component: {fileID: 862761182}
   - component: {fileID: 862761183}
+  - component: {fileID: 862761184}
   m_Layer: 0
   m_Name: BlackMarker
   m_TagString: MarkerTarget
@@ -1181,6 +1204,19 @@ CapsuleCollider:
   m_Height: 5
   m_Direction: 1
   m_Center: {x: 0, y: 0, z: 0}
+--- !u!114 &862761184
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 862761178}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0fc6ddb3684515e48bac5cebb4943ed5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::TargetMarker
+  targetTransform: {fileID: 191810632}
 --- !u!1 &1038077329
 GameObject:
   m_ObjectHideFlags: 0
@@ -2076,9 +2112,9 @@ RectTransform:
   - {fileID: 832155712}
   m_Father: {fileID: 410502518}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 308, y: 500}
+  m_AnchorMin: {x: 1, y: 1}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -146, y: -125}
   m_SizeDelta: {x: 160, y: 30}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2135624265

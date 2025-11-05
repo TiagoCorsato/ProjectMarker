@@ -75,6 +75,9 @@ public class Marker : MonoBehaviour
     public void ResetMarker()
     {
         Debug.Log("Resetting Marker");
+        gameObject.isStatic = false;
+        rb.isKinematic = false;
+        rb.detectCollisions = true;        
         isHeld = false;
         isThrown = false;
         ResetRigidBodyMovement();
@@ -88,7 +91,7 @@ public class Marker : MonoBehaviour
         {
             foreach (ContactPoint contact in collision.contacts)
             {
-                Debug.Log("Contact point: " + contact.point);
+                //Debug.Log("Contact point: " + contact.point);
 
                 // Check if we hit the top
                 Vector3 normal = contact.normal;
@@ -101,11 +104,11 @@ public class Marker : MonoBehaviour
 
                     if (selfAlignment > selfAlignmentThreshold)
                     {
+                            AttachTo(collision.gameObject);
                         // Check if this marker is moving slowly
                         if (rb.linearVelocity.magnitude < velocityThreshold)
                         {
                             Debug.Log("This marker is upright and slow enough — attaching!");
-                            //AttachTo(collision.transform, contact.point);
                             return;
                         }
                         else
@@ -122,9 +125,14 @@ public class Marker : MonoBehaviour
         }
     }
 
-    void Attach(GameObject target)
+    void AttachTo(GameObject target)
     {
-        //target.transform;
+        transform.position = target.GetComponent<TargetMarker>().targetTransform.position;
+        ResetRigidBodyMovement();
+        rb.isKinematic = true;
+        rb.detectCollisions = false;
+        transform.position = target.GetComponent<TargetMarker>().targetTransform.position;
+        gameObject.isStatic = true;
     }
     
     public void BeginPickup(RaycastHit hit, Camera mainCam)
@@ -166,7 +174,7 @@ public class Marker : MonoBehaviour
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        rb.useGravity = true;
+        rb.useGravity = true; 
 
         rb.AddForce(dir * power * impulseScale, ForceMode.Impulse);
 
