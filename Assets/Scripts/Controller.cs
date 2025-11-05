@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
-
+using UnityEngine.Events;
 public class Controller : MonoBehaviour
 {
     [SerializeField] InputSystem_Actions inputActions;
     public static Controller Instance;
+    public UnityEvent ObjectThrown;
 
     Vector2 startPos;
     float swipeStartTime;
@@ -90,6 +91,7 @@ public class Controller : MonoBehaviour
         float power = SwipePower(swipeSpeed);
 
         Marker.Instance.Throw(dir, power); // finally throw the marker
+        ObjectThrown.Invoke();
     }
 
     private static Vector3 TryGetWorldThrow(Vector2 swipe, Camera cam, float swipeSpeed)
@@ -106,10 +108,10 @@ public class Controller : MonoBehaviour
         float influence = Mathf.Clamp01(swipeSpeed / 2000f);
 
         // add a bit of upward and sideways aim
-        Vector3 throwDir = 
-        (forward + up * 0.4f) // base upward arc bias
-        + right * (swipeDir.x * 0.3f)  // slight horizontal tilt
-        + up * (swipeDir.y * 0.5f);    // vertical influence from swipe
+        Vector3 throwDir =
+            forward + up * 0.25f // lower arc bias
+            + right * (swipeDir.x * 0.25f)
+            + up * (swipeDir.y * 0.4f);
 
         return throwDir.normalized;
     }

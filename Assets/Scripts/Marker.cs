@@ -15,6 +15,8 @@ public class Marker : MonoBehaviour
     Plane grabPlane;
     [SerializeField] float dragLerp = 80f;
 
+    [SerializeField] float pickupRot = 20f;
+
     [SerializeField] float impulseScale = 30f;
     Rigidbody rb;
     Transform originalParent;
@@ -47,7 +49,7 @@ public class Marker : MonoBehaviour
         curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
     }
 
-    void FixedUpdate()
+    void LateUpdate()
     {
         if (!isThrown) return;
 
@@ -95,7 +97,7 @@ public class Marker : MonoBehaviour
                     Debug.Log("Hit the top surface!");
 
                     // Check if target is upright
-                     float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
+                    float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
 
                     if (selfAlignment > selfAlignmentThreshold)
                     {
@@ -119,10 +121,18 @@ public class Marker : MonoBehaviour
             }
         }
     }
+
+    void Attach(GameObject target)
+    {
+        //target.transform;
+    }
+    
     public void BeginPickup(RaycastHit hit, Camera mainCam)
     {
         isHeld = true;
         ResetRigidBodyMovement();
+        Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
+        transform.rotation = newRot;
         grabOffset = hit.point - transform.position;
         var camFwd = mainCam ? mainCam.transform.forward : Vector3.forward;
         grabPlane = new Plane(-camFwd, hit.point);
@@ -161,9 +171,11 @@ public class Marker : MonoBehaviour
         rb.AddForce(dir * power * impulseScale, ForceMode.Impulse);
 
         // Flip and curve spins
-        rb.AddTorque(transform.right * 1.5f, ForceMode.Impulse);  // small flip
+        rb.AddTorque(transform.right * flipForce, ForceMode.Impulse);  // small flip
         rb.AddTorque(transform.up * dir.x * 1f, ForceMode.Impulse); // subtle curve spin
-        
+
+        rb.AddForce(Vector3.down * 3f, ForceMode.Impulse);
     }
 
+    public float flipForce = 1.5f;
 }
