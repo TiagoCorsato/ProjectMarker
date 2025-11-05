@@ -5,6 +5,7 @@ TagManager:
   serializedVersion: 3
   tags:
   - MarkerTarget
+  - ThrowObject
   layers:
   - Default
   - TransparentFX

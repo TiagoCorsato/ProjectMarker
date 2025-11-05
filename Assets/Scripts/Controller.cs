@@ -1,99 +1,118 @@
-using System;
-using Unity.VisualScripting;
 using UnityEngine;
-using UnityEngine.EventSystems;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
 
 public class Controller : MonoBehaviour
 {
-    [SerializeField] public InputSystem_Actions playerInputActions;
-
+    [SerializeField] public InputSystem_Actions inputActions;
     public static Controller Instance;
 
-    [SerializeField] private float swipeThreshold = 50f;
     Vector2 startPos;
-    public bool bShouldDetectSwipe;
+
+    // Debugging properties 
+    [SerializeField] float rayMax = 50f;
+    [SerializeField] float rayDur = 1f;
 
     private void Awake()
     {
-        playerInputActions ??= new InputSystem_Actions();
+        inputActions ??= new InputSystem_Actions();
         Instance = this;
     }
 
     private void OnEnable()
     {
-        playerInputActions.Enable();
-        playerInputActions.Player.TouchPress.started += OnTouchStarted;
-        playerInputActions.Player.TouchPress.canceled += OnTouchEnded;
+        inputActions.Enable();
+        EnhancedTouchSupport.Enable();
+        inputActions.Player.TouchPress.started += OnTouchStarted;
+        inputActions.Player.TouchPress.canceled += OnTouchEnded;
+        inputActions.Player.TouchPosition.performed += OnTouchMoved;
     }
 
     private void OnDisable()
     {
-        playerInputActions.Player.TouchPress.started -= OnTouchStarted;
-        playerInputActions.Player.TouchPress.canceled -= OnTouchEnded;
-        playerInputActions.Disable();
-    }
-
-    void OnTouchPress(InputAction.CallbackContext context)
-    {
-        Debug.Log("Touch Pressed");
+        inputActions.Disable();
+        EnhancedTouchSupport.Disable();
+        inputActions.Player.TouchPress.started -= OnTouchStarted;
+        inputActions.Player.TouchPress.canceled -= OnTouchEnded;
+        inputActions.Player.TouchPosition.performed -= OnTouchMoved;
     }
 
     void OnTouchStarted(InputAction.CallbackContext context)
     {
-        startPos = playerInputActions.Player.TouchPosition.ReadValue<Vector2>();
+        var cam = Camera.main; if (!cam) return;
+        var pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
+        var ray = cam.ScreenPointToRay(pos);
+        if (Physics.Raycast(ray, out var hit))
+        {
+            Debug.DrawLine(ray.origin, hit.point, Color.cyan,  rayDur);
+            Debug.DrawRay(hit.point, hit.normal * 0.25f, Color.magenta, rayDur);
+            if (hit.transform.CompareTag("ThrowObject")) Marker.Instance.BeginPickup(hit, cam);
+            return;
+        }
+        Debug.DrawLine(ray.origin, ray.origin + ray.direction * rayMax, Color.yellow, rayDur);
     }
 
+    private void OnTouchMoved(InputAction.CallbackContext context)
+    {
+        var mainCam = Camera.main; if (!mainCam) return;
+        Vector2 pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
+        Marker.Instance.WhilePickedUp(pos, mainCam, Time.deltaTime);
+    }
+
+    // When touch is released
     private void OnTouchEnded(InputAction.CallbackContext context)
     {
-        if (!bShouldDetectSwipe) return;
-        Debug.Log("Calculating swipe");
-        Vector2 endPos = playerInputActions.Player.TouchPosition.ReadValue<Vector2>();
-        Vector2 swipe = endPos - startPos;
+        if (!Marker.Instance.isHeld) return; // if not held, dont do anything
+        
+        var mainCam = Camera.main;
+        if (!mainCam) return;
+        Vector2 end = inputActions.Player.TouchPosition.ReadValue<Vector2>();
+        Vector2 swipe = end - startPos; // capture the swipe pos. 
 
-        if (TryGetWorldThrow(swipe, swipeThreshold, out var dirWorld, out var power))
+        const float minPixels = 50f; // probably threshold we want to use as minimum so theres no ugly swipes
+        float powerMaxPx = minPixels * 5f; // max power based on pixel swipe
+
+        if (!IsForwardSwipe(swipe, mainCam, minPixels, 0.5f)) // if the swipe is not going forward (player assist)
         {
-            Marker.Instance.Throw(dirWorld, power);
+            Marker.Instance.EndPickup(); // release the marker and exit
+            return;
         }
+        if (!IsSwipeStrongEnough()) //  check how strong the swipe was (time treshold from when they swiped, how fast they swiped, etc)
+        {
+
+            return; // if it was not a very strong swipe, per the treshold, we should release the marker and exit
+        }
+
+        // if we get here, we have a forward and strong enough swipe, we should throw the marker
+        var dir = TryGetWorldThrow(swipe, mainCam); 
+        var power = SwipePower(new Vector2(), new Vector2()); // this function should take into account the swipe time, speed, etc so it can calculate the power of the throw
+        power = Mathf.Pow(power, 0.75f); 
+
+        Marker.Instance.Throw(dir, power); // finally throw the marker
     }
 
-    private static readonly Vector2[] Dir8Planar =
+    private static bool IsForwardSwipe(Vector2 swipe, Camera cam, float minPixels, float minCosAngle)
     {
-        new( 1,  0), // Right
-        new( 1,  1), // UpRight
-        new( 0,  1), // Up
-        new(-1,  1), // UpLeft
-        new(-1,  0), // Left
-        new(-1, -1), // DownLeft
-        new( 0, -1), // Down
-        new( 1, -1), // DownRight
-    };
-
-    private static bool TryGetWorldThrow(Vector2 swipe, float minPixels, out Vector3 dir, out float power01)
-    {
-        dir = Vector3.zero; 
-        power01 = 0f;
-        if (swipe.sqrMagnitude < minPixels * minPixels) return false;
-
-        var planar = swipe.normalized;                      // continuous 2d
-        dir = PlanarToWorldDir(planar);                    // project to world
-        if (dir == Vector3.zero) return false;
-
-        var maxPixels = minPixels * 5f;                    // tune sensitivity
-        var clamped = Mathf.Clamp(swipe.magnitude, minPixels, maxPixels);
-        power01 = Mathf.InverseLerp(minPixels, maxPixels, clamped);
-        return true;
+        return false;
     }
 
-    private static Vector3 PlanarToWorldDir(Vector2 planar)
+    private static Vector3 TryGetWorldThrow(Vector2 swipe, Camera mainCam)
     {
-        var cam = Camera.main;
-        if (!cam) return Vector3.zero; // no camera, bail safely
+        return new Vector3();
+    }
 
-        var right   = Vector3.ProjectOnPlane(cam.transform.right,   Vector3.up).normalized;
-        var forward = Vector3.ProjectOnPlane(cam.transform.forward, Vector3.up).normalized;
+    private static float SwipePower(Vector2 swipe, Vector2 swipeTime)
+    {
+        return 0f;
+    }
 
-        var v = right * planar.x + forward * planar.y;
-        return v.sqrMagnitude > 1e-6f ? v.normalized : Vector3.zero;
+    private static bool IsSwipeStrongEnough()
+    {
+        return false;
+    }
+
+    void OnDrawGizmos()
+    {
+       
     }
 }
