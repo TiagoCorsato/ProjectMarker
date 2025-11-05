@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 
 [RequireComponent(typeof(Rigidbody))]
@@ -9,19 +8,23 @@ public class Marker : MonoBehaviour
     // Marker pickup/drag properties
     Vector3 originalPos;
     Quaternion originalRot;
+
     public bool isHeld;
     public bool isThrown;
     private Vector3 grabOffset;
     Plane grabPlane;
-   
     [SerializeField] float dragLerp = 80f;
-    [SerializeField] float pickupRot = 20f;
 
     [SerializeField] float impulseScale = 30f;
-    
     Rigidbody rb;
-
     Transform originalParent;
+
+    Vector3 lastAngularVelocity;    
+    [SerializeField] float curveForce = 0.05f;      // strength of curve
+    [SerializeField] float curveDuration = 0.5f;    // how long the curve effect lasts (seconds)
+    [SerializeField] AnimationCurve curveFalloff;   // optional curve editor (0–1)
+    float throwTime;                                // when throw started
+
 
     public float selfAlignmentThreshold = 0.9f;   // how upright *this* marker must be
     public float alignmentThreshold = 0.9f;     // how upright the target must be
@@ -31,13 +34,33 @@ public class Marker : MonoBehaviour
     {
         Instance = this;
     }
-    
+
     void Start()
     {
         rb = GetComponent<Rigidbody>();
         rb.useGravity = false;
+        rb.linearVelocity = Vector3.zero;
         originalPos = transform.position;
         originalRot = transform.rotation;
+
+        if (curveFalloff == null || curveFalloff.length == 0)
+        curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
+    }
+
+    void FixedUpdate()
+    {
+        if (!isThrown) return;
+
+        float elapsed = Time.time - throwTime;
+        if (elapsed > curveDuration) return; // stop applying after duration
+
+        // How strong the curve is right now (fades out)
+        float t = elapsed / curveDuration;
+        float fade = curveFalloff.Evaluate(t); // 1 → 0 over time
+
+        // Cross product simulates lift from spin
+        Vector3 liftDir = Vector3.Cross(rb.angularVelocity, rb.linearVelocity);
+        rb.AddForce(liftDir * curveForce * fade, ForceMode.Force);
     }
 
     void ResetRigidBodyMovement()
@@ -96,48 +119,51 @@ public class Marker : MonoBehaviour
             }
         }
     }
-
     public void BeginPickup(RaycastHit hit, Camera mainCam)
     {
         isHeld = true;
         ResetRigidBodyMovement();
-        Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
-        transform.rotation = newRot;
         grabOffset = hit.point - transform.position;
         var camFwd = mainCam ? mainCam.transform.forward : Vector3.forward;
         grabPlane = new Plane(-camFwd, hit.point);
-
     }
 
     public void WhilePickedUp(Vector2 screenPos, Camera mainCam, float dt)
     {
         if (!isHeld || !mainCam) return;
         var ray = mainCam.ScreenPointToRay(screenPos);
-        if (!grabPlane.Raycast(ray, out var dist)) return;
+        if (!grabPlane.Raycast(ray, out float dist)) return;
 
-        var planeHit = ray.GetPoint(dist);
-        var target = planeHit - grabOffset;
-        var next = Vector3.Lerp(transform.position, target, dragLerp * dt);
+        Vector3 planeHit = ray.GetPoint(dist);
+        Vector3 target = planeHit - grabOffset;
+        Vector3 next = Vector3.Lerp(transform.position, target, dragLerp * dt);
         rb.MovePosition(next);
     }
 
     public void EndPickup()
     {
         if (!isHeld) return;
-        if (!isThrown)
-        {
-            isHeld = false;
-            ResetMarker();
-        }
+        isHeld = false;
+        ResetMarker();
     }
 
     public void Throw(Vector3 dir, float power)
     {
         Debug.Log($"Throwing {dir} {power}");
+        isHeld = false;
         isThrown = true;
-        rb.linearVelocity = Vector3.zero; rb.angularVelocity = Vector3.zero;
-        rb.AddForce(dir.normalized * power * impulseScale, ForceMode.Impulse);
+        throwTime = Time.time;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
         rb.useGravity = true;
+
+        rb.AddForce(dir * power * impulseScale, ForceMode.Impulse);
+
+        // Flip and curve spins
+        rb.AddTorque(transform.right * 1.5f, ForceMode.Impulse);  // small flip
+        rb.AddTorque(transform.up * dir.x * 1f, ForceMode.Impulse); // subtle curve spin
+        
     }
 
 }

@@ -4,10 +4,11 @@ using UnityEngine.InputSystem.EnhancedTouch;
 
 public class Controller : MonoBehaviour
 {
-    [SerializeField] public InputSystem_Actions inputActions;
+    [SerializeField] InputSystem_Actions inputActions;
     public static Controller Instance;
 
     Vector2 startPos;
+    float swipeStartTime;
 
     // Debugging properties 
     [SerializeField] float rayMax = 50f;
@@ -41,13 +42,15 @@ public class Controller : MonoBehaviour
     {
         var cam = Camera.main; if (!cam) return;
         var pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
+        startPos = pos;
+        swipeStartTime = Time.time;
+
         var ray = cam.ScreenPointToRay(pos);
         if (Physics.Raycast(ray, out var hit))
         {
             Debug.DrawLine(ray.origin, hit.point, Color.cyan,  rayDur);
             Debug.DrawRay(hit.point, hit.normal * 0.25f, Color.magenta, rayDur);
             if (hit.transform.CompareTag("ThrowObject")) Marker.Instance.BeginPickup(hit, cam);
-            return;
         }
         Debug.DrawLine(ray.origin, ray.origin + ray.direction * rayMax, Color.yellow, rayDur);
     }
@@ -69,50 +72,52 @@ public class Controller : MonoBehaviour
         Vector2 end = inputActions.Player.TouchPosition.ReadValue<Vector2>();
         Vector2 swipe = end - startPos; // capture the swipe pos. 
 
-        const float minPixels = 50f; // probably threshold we want to use as minimum so theres no ugly swipes
-        float powerMaxPx = minPixels * 5f; // max power based on pixel swipe
 
-        if (!IsForwardSwipe(swipe, mainCam, minPixels, 0.5f)) // if the swipe is not going forward (player assist)
+        float swipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
+
+        float swipeSpeed = swipe.magnitude / swipeTime;
+        Debug.Log($"Swipe speed: {swipeSpeed}");
+
+        // minimum distance threshold
+        if (swipe.magnitude < 30f)
         {
             Marker.Instance.EndPickup(); // release the marker and exit
             return;
         }
-        if (!IsSwipeStrongEnough()) //  check how strong the swipe was (time treshold from when they swiped, how fast they swiped, etc)
-        {
 
-            return; // if it was not a very strong swipe, per the treshold, we should release the marker and exit
-        }
-
-        // if we get here, we have a forward and strong enough swipe, we should throw the marker
-        var dir = TryGetWorldThrow(swipe, mainCam); 
-        var power = SwipePower(new Vector2(), new Vector2()); // this function should take into account the swipe time, speed, etc so it can calculate the power of the throw
-        power = Mathf.Pow(power, 0.75f); 
+        // calculate throw direction and power
+        Vector3 dir = TryGetWorldThrow(swipe, mainCam, swipeSpeed);
+        float power = SwipePower(swipeSpeed);
 
         Marker.Instance.Throw(dir, power); // finally throw the marker
     }
 
-    private static bool IsForwardSwipe(Vector2 swipe, Camera cam, float minPixels, float minCosAngle)
+    private static Vector3 TryGetWorldThrow(Vector2 swipe, Camera cam, float swipeSpeed)
     {
-        return false;
+        // base forward
+        Vector3 forward = cam.transform.forward;
+        Vector3 right = cam.transform.right;
+        Vector3 up = cam.transform.up;
+
+        // normalized swipe direction (screen space)
+        Vector2 swipeDir = swipe.normalized;
+
+        // influence factor - faster swipes exaggerate the angle a bit
+        float influence = Mathf.Clamp01(swipeSpeed / 2000f);
+
+        // add a bit of upward and sideways aim
+        Vector3 throwDir = 
+        (forward + up * 0.4f) // base upward arc bias
+        + right * (swipeDir.x * 0.3f)  // slight horizontal tilt
+        + up * (swipeDir.y * 0.5f);    // vertical influence from swipe
+
+        return throwDir.normalized;
     }
 
-    private static Vector3 TryGetWorldThrow(Vector2 swipe, Camera mainCam)
+    private static float SwipePower(float swipeSpeed)
     {
-        return new Vector3();
-    }
-
-    private static float SwipePower(Vector2 swipe, Vector2 swipeTime)
-    {
-        return 0f;
-    }
-
-    private static bool IsSwipeStrongEnough()
-    {
-        return false;
-    }
-
-    void OnDrawGizmos()
-    {
-       
+        // normalize swipe speed into 0–1 range for power
+        float normalized = Mathf.Clamp01(swipeSpeed / 2500f);
+        return normalized;
     }
 }
