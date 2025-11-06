@@ -1,36 +1,46 @@
 using UnityEngine;
+using UnityEngine.Events;
 
 [RequireComponent(typeof(Rigidbody))]
 public class Marker : MonoBehaviour
 {
     public static Marker Instance;
-
+    public UnityEvent successfulStack;
     // Marker pickup/drag properties
     Vector3 originalPos;
     Quaternion originalRot;
 
     public bool isHeld;
     public bool isThrown;
+    public bool isGrounded;
+
     private Vector3 grabOffset;
     Plane grabPlane;
     [SerializeField] float dragLerp = 80f;
-
     [SerializeField] float pickupRot = 20f;
-
-    [SerializeField] float impulseScale = 30f;
+    [SerializeField] public float impulseScale = 30f;
     Rigidbody rb;
     Transform originalParent;
 
     Vector3 lastAngularVelocity;    
-    [SerializeField] float curveForce = 0.05f;      // strength of curve
-    [SerializeField] float curveDuration = 0.5f;    // how long the curve effect lasts (seconds)
+    [SerializeField] public float curveForce = 0.05f;      // strength of curve
+    [SerializeField] public float curveDuration = 0.5f;    // how long the curve effect lasts (seconds)
     [SerializeField] AnimationCurve curveFalloff;   // optional curve editor (0–1)
+    public float flipForce = 1.5f;
     float throwTime;                                // when throw started
 
-
-    public float selfAlignmentThreshold = 0.9f;   // how upright *this* marker must be
-    public float alignmentThreshold = 0.9f;     // how upright the target must be
+    public float selfAlignmentThreshold = 0.995f;   // how upright *this* marker must be
+    public float alignmentThreshold = 0.995f;     // how upright the target must be
     public float velocityThreshold = 1.0f;      // how slow the marker must be to attach
+
+    [SerializeField] float minImpact = 0.5f; 
+    [SerializeField] float maxImpact = 12f;
+    [SerializeField] AnimationCurve loudnessCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
+
+    public void SetImpulseForce(float force) => impulseScale = force;
+    public void SetCurveForce(float force) => curveForce = force;
+    public void SetCurveDuration(float duration) => curveDuration = duration;
+    public void SetFlipForce(float force) => flipForce = force;
 
     void Awake()
     {
@@ -75,11 +85,18 @@ public class Marker : MonoBehaviour
     public void ResetMarker()
     {
         Debug.Log("Resetting Marker");
+        if (!AudioManager.Instance.IsPlaying())
+        {
+            AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
+        }
+        AudioManager.Instance.ResumeBgm();
+        SFXManager.Instance.StopAllSfx();
         gameObject.isStatic = false;
         rb.isKinematic = false;
         rb.detectCollisions = true;        
         isHeld = false;
         isThrown = false;
+        isGrounded = false;
         ResetRigidBodyMovement();
         rb.MovePosition(originalPos);
         rb.MoveRotation(originalRot);
@@ -87,42 +104,59 @@ public class Marker : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (collision.collider.CompareTag("MarkerTarget"))
+        bool isTarget = collision.collider.CompareTag("MarkerTarget");
+        bool hitTop = false;
+
+        foreach (var contact in collision.contacts)
         {
-            foreach (ContactPoint contact in collision.contacts)
+            if (Vector3.Dot(contact.normal, Vector3.up) > 0.5f)
             {
-                //Debug.Log("Contact point: " + contact.point);
-
-                // Check if we hit the top
-                Vector3 normal = contact.normal;
-                if (Vector3.Dot(normal, Vector3.up) > 0.5f)
-                {
-                    Debug.Log("Hit the top surface!");
-
-                    // Check if target is upright
-                    float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
-
-                    if (selfAlignment > selfAlignmentThreshold)
-                    {
-                            AttachTo(collision.gameObject);
-                        // Check if this marker is moving slowly
-                        if (rb.linearVelocity.magnitude < velocityThreshold)
-                        {
-                            Debug.Log("This marker is upright and slow enough — attaching!");
-                            return;
-                        }
-                        else
-                        {
-                            Debug.Log("Too fast to attach!");
-                        }
-                    }
-                    else
-                    {
-                        Debug.Log("Marker is tilted, not aligned!");
-                    }
-                }
+                hitTop = true;
+                break;
             }
         }
+
+        if (isTarget && hitTop)
+        {
+
+            float selfAlignment = Vector3.Dot(transform.up, Vector3.up);   
+            bool upright = selfAlignment > selfAlignmentThreshold;
+            // bool slow    = rb.linearVelocity.magnitude < velocityThreshold;
+            // Debug.Log($"linearVelocity {rb.linearVelocity.magnitude} < {velocityThreshold}");
+            Debug.Log($"selfAlignment {upright} {selfAlignment} > {selfAlignmentThreshold}");
+            // Debug.Log($@"{selfAlignmentThreshold} {slow})");
+            if (upright)// && slow)
+            {
+                Debug.Log("stack success: upright + slow on target top");
+                AttachTo(collision.gameObject); 
+                isGrounded = true;
+
+                SFXManager.Instance.StopAllSfx();
+                SFXManager.Instance.PlayMarkerDropClip(1);
+                successfulStack.Invoke();
+                return;
+            }
+
+            // failed stack attempt on target (too tilted or too fast)
+            if (!upright) Debug.Log("stack fail: marker tilted");
+            // if (!slow)    Debug.Log("stack fail: too fast");
+            isGrounded = true;
+            SFXManager.Instance.StopAllSfx();
+            SFXManager.Instance.PlayFailClip();
+            return;
+        }
+
+        // non-target or not the top surface -> treat as normal ground contact
+        if (!isGrounded)
+        {
+            isGrounded = true;
+            AudioManager.Instance.ResumeBgm();
+        }
+        
+        float groundImpact = collision.relativeVelocity.magnitude;
+        float tg = Mathf.InverseLerp(minImpact, maxImpact, groundImpact);
+        SFXManager.Instance.StopAllSfx();
+        SFXManager.Instance.PlayMarkerDropClip(Mathf.Clamp01(loudnessCurve.Evaluate(tg)));
     }
 
     void AttachTo(GameObject target)
@@ -185,5 +219,5 @@ public class Marker : MonoBehaviour
         rb.AddForce(Vector3.down * 3f, ForceMode.Impulse);
     }
 
-    public float flipForce = 1.5f;
+    
 }

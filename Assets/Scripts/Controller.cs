@@ -2,12 +2,12 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.Events;
+using System;
 public class Controller : MonoBehaviour
 {
     [SerializeField] InputSystem_Actions inputActions;
     public static Controller Instance;
     public UnityEvent ObjectThrown;
-
     Vector2 startPos;
     float swipeStartTime;
 
@@ -39,6 +39,10 @@ public class Controller : MonoBehaviour
         inputActions.Player.TouchPosition.performed -= OnTouchMoved;
     }
 
+    private void Start() 
+    {
+        AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
+    }
     void OnTouchStarted(InputAction.CallbackContext context)
     {
         var cam = Camera.main; if (!cam) return;
@@ -77,7 +81,7 @@ public class Controller : MonoBehaviour
         float swipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
 
         float swipeSpeed = swipe.magnitude / swipeTime;
-        Debug.Log($"Swipe speed: {swipeSpeed}");
+        // Debug.Log($"Swipe speed: {swipeSpeed}");
 
         // minimum distance threshold
         if (swipe.magnitude < 30f)
@@ -89,7 +93,9 @@ public class Controller : MonoBehaviour
         // calculate throw direction and power
         Vector3 dir = TryGetWorldThrow(swipe, mainCam, swipeSpeed);
         float power = SwipePower(swipeSpeed);
-
+        // AudioManager.Instance.PauseBgm();
+        SFXManager.Instance.PlayActionThrow();
+        // SFXManager.Instance.PlayThrowBGM();
         Marker.Instance.Throw(dir, power); // finally throw the marker
         ObjectThrown.Invoke();
     }

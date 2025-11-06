@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "ProjectMarker.slnx"
+    "dotnet.defaultSolution": "MarkerGame_Git.slnx"
 }

@@ -6,6 +6,7 @@ TagManager:
   tags:
   - MarkerTarget
   - ThrowObject
+  - Constraints
   layers:
   - Default
   - TransparentFX
