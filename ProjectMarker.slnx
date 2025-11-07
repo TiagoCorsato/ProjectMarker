@@ -59,11 +59,11 @@
   <Project Path="Unity.AdaptivePerformance.Google.Android.Editor.csproj" />
   <Project Path="Unity.VisualScripting.Shared.Editor.csproj" />
   <Project Path="Unity.Profiling.Core.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.AdaptivePerformance.Simulator.Editor.csproj" />
   <Project Path="Unity.RenderPipeline.Universal.ShaderLibrary.csproj" />
   <Project Path="Unity.AdaptivePerformance.Profiler.Editor.csproj" />
   <Project Path="Unity.AdaptivePerformance.Simulator.Google.Extension.Editor.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Unity.Rendering.LightTransport.Editor.csproj" />
   <Project Path="Unity.InputSystem.DocCodeSamples.csproj" />
   <Project Path="Unity.RenderPipelines.Universal.Shaders.csproj" />
