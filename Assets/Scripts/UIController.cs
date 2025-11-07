@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class UIController : MonoBehaviour
 {
+    public GameObject menuUI;
+    public GameObject gameHUD;
+    public TextMeshProUGUI attemptCountText;
     [SerializeField] RectTransform spawnAnchor;    
     [SerializeField] TextMeshProUGUI textPrefab; 
     [SerializeField] List<string> lines;   
@@ -18,8 +21,12 @@ public class UIController : MonoBehaviour
     readonly Queue<UIFountainFlyer> pool = new Queue<UIFountainFlyer>();
     int nextLine;
 
+    public static UIController Instance;
+
     void Awake()
     {
+        Instance = this;
+
         if (!spawnAnchor) throw new System.InvalidOperationException("spawnAnchor not assigned");
         if (!textPrefab) throw new System.InvalidOperationException("textPrefab not assigned");
         for (int i = 0; i < poolSize; i++) pool.Enqueue(CreateFlyer());
@@ -27,6 +34,8 @@ public class UIController : MonoBehaviour
 
     void Start()
     {
+        OnMenuClicked();
+
         Marker.Instance.successfulStack.AddListener(OnSuccess);
     }
 
@@ -81,5 +90,24 @@ public class UIController : MonoBehaviour
     {
         if (nextLine >= lines.Count) nextLine = 0;
         return lines[nextLine++];
+    }
+
+    public void OnStartClicked()
+    {
+        GameManager.Instance.PauseState(false);
+        menuUI.SetActive(false);
+        gameHUD.SetActive(true);
+    }
+
+    public void OnMenuClicked()
+    {
+        GameManager.Instance.PauseState(true);
+        menuUI.SetActive(true);
+        gameHUD.SetActive(false);
+    }
+
+    public void UpdateAttemptCounter(int NumOfAttempts)
+    {
+        attemptCountText.text = $"Attempts: \n{NumOfAttempts}";
     }
 }

@@ -5,10 +5,13 @@ using UnityEngine.Events;
 public class Marker : MonoBehaviour
 {
     public static Marker Instance;
-    public UnityEvent successfulStack;
     // Marker pickup/drag properties
     Vector3 originalPos;
     Quaternion originalRot;
+
+    // Events
+    public UnityEvent successfulStack;
+    public UnityEvent attemptMade;
 
     public bool isHeld;
     public bool isThrown;
@@ -217,6 +220,8 @@ public class Marker : MonoBehaviour
         rb.AddTorque(transform.up * dir.x * 1f, ForceMode.Impulse); // subtle curve spin
 
         rb.AddForce(Vector3.down * 3f, ForceMode.Impulse);
+
+        attemptMade?.Invoke();
     }
 
     
