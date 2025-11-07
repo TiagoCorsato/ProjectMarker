@@ -7,6 +7,14 @@ public class AudioManager : MonoBehaviour
 {
     public static AudioManager Instance { get; private set; }
     public AudioMixerGroup musicGroup;
+
+    [Header("Audio Mixers")]
+    public AudioMixer sfxMixer;
+    public AudioMixer musicMixer;   
+    
+    public string musicParam = "BGMVolume";
+    public string sfxParam = "SFXVolume";
+
     [SerializeField] public List<AudioClip> bgmClips;
     public float defaultFadeSeconds = 0.5f;
     AudioSource backgroundMusic;
@@ -88,10 +96,21 @@ public class AudioManager : MonoBehaviour
         fadeCoro = null;
     }
 
-    IEnumerator CrossFade(AudioClip next, float nextVol, float seconds) {
+    IEnumerator CrossFade(AudioClip next, float nextVol, float seconds)
+    {
         yield return FadeTo(0f, seconds * 0.5f);
         backgroundMusic.clip = next;
         backgroundMusic.Play();
         yield return (fadeCoro = StartCoroutine(FadeTo(nextVol, seconds * 0.5f)));
+    }
+
+    public void MusicVolume(float volume)
+    {
+        musicMixer.SetFloat(musicParam, Mathf.Log10(volume) * 20);
+    }
+    
+    public void SFXVolume(float volume)
+    {
+        sfxMixer.SetFloat(sfxParam, Mathf.Log10(volume) * 20);
     }
 }

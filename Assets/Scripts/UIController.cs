@@ -1,12 +1,16 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class UIController : MonoBehaviour
 {
     public GameObject menuUI;
+    public GameObject volumeUI;
     public GameObject gameHUD;
     public TextMeshProUGUI attemptCountText;
+    public Slider musicSlider;
+    public Slider sfxSlider;
     [SerializeField] RectTransform spawnAnchor;    
     [SerializeField] TextMeshProUGUI textPrefab; 
     [SerializeField] List<string> lines;   
@@ -104,10 +108,27 @@ public class UIController : MonoBehaviour
         GameManager.Instance.PauseState(true);
         menuUI.SetActive(true);
         gameHUD.SetActive(false);
+        volumeUI.SetActive(false);
+    }
+
+    public void OnVolumeClicked()
+    {
+        volumeUI.SetActive(!volumeUI.activeSelf);
+        menuUI.SetActive(!volumeUI.activeSelf);
     }
 
     public void UpdateAttemptCounter(int NumOfAttempts)
     {
         attemptCountText.text = $"Attempts: \n{NumOfAttempts}";
+    }
+
+    public void OnMusicVolumeChanged()
+    {
+        AudioManager.Instance.MusicVolume(musicSlider.value);
+    }
+
+    public void OnSFXVolumeChanged()
+    {
+        AudioManager.Instance.SFXVolume(sfxSlider.value);
     }
 }
