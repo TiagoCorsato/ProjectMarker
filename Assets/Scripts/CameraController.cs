@@ -11,17 +11,17 @@ public class CameraController : MonoBehaviour
     public float orbitSpeedDegreesPerSec = 45f;
     public int focusPriority = 20;
 
+    public float rotationSpeed = 120f; // degrees per second
+    public int numOfRoations = 3;
+
     [Header("CameraDefaults")]
     [SerializeField] Vector3 defaultCameraPos;
     [SerializeField] Vector3 defaultCameraRot;
 
+    [SerializeField] CinemachineOrbitalFollow orbitalFollow;
     [SerializeField] CinemachineBrain brain;
     [SerializeField] GameObject followCam;
-    // [SerializeField] CinemachineOrbitalFollow orbital;
-    // [SerializeField] CinemachineRotationComposer composer;
-    ICinemachineCamera prevActive;
-    int prevPriority;
-    bool focusing;
+    [SerializeField] GameObject mainCam;
     
     [ExecuteInEditMode]
     void OnEnable() 
@@ -34,27 +34,27 @@ public class CameraController : MonoBehaviour
             Camera.main.transform.rotation = Quaternion.Euler(defaultCameraRot);
         }
     }
-    void Awake()
-    {
-        // if (!orbital) Debug.LogError("orbitVcam needs CinemachineOrbitalTransposer");
-        // if (!composer) Debug.LogError("orbitVcam needs CinemachineComposer");
-        
-        // disable input so we can drive rotation ourselves
-        // orbital.xAxis.m_InputAxisName = string.Empty;
-        // orbital.m_XAxis.m_MaxSpeed = 0f; // we set Value directly
-    }
+
     void Start()
     {
         Controller.Instance.ObjectThrown.AddListener(OnObjectThrown);    
+        Marker.Instance.successfulStack.AddListener(OnObjectLanded);
+
     }
 
     void OnObjectThrown()
     {
-        StartCoroutine(Delay(.1f, ActivateFollowCam));   
+        StartCoroutine(Delay(.1f, ActivateFollowCam));
+    }
+    
+    void OnObjectLanded()
+    {
+        StartCoroutine(SpinAround());
     }
     
     void ActivateFollowCam()
     {
+        mainCam.SetActive(false);
         followCam.SetActive(true);
     }
     static IEnumerator Delay(float seconds, System.Action action)
@@ -62,5 +62,19 @@ public class CameraController : MonoBehaviour
         if (seconds < 0f) seconds = 0f;           // comment: defensive clamp
         yield return new WaitForSeconds(seconds); // comment: uses scaled time
         action.Invoke();
+    }
+
+    private IEnumerator SpinAround()
+    {
+        //rotationCinemachine.SetActive(true);
+        float totalRotation = 0f;
+        while (totalRotation < 360f * numOfRoations) // full circle
+        {
+            float delta = rotationSpeed * Time.deltaTime;
+            totalRotation += delta;
+            orbitalFollow.HorizontalAxis.Value += delta;
+            yield return null;
+        }
+        // Optional: end spin or switch back to normal cam
     }
 }
