@@ -162,7 +162,7 @@ public class Marker : MonoBehaviour
         SFXManager.Instance.PlayMarkerDropClip(Mathf.Clamp01(loudnessCurve.Evaluate(tg)));
     }
 
-    void AttachTo(GameObject target)
+    public void AttachTo(GameObject target)
     {
         transform.position = target.GetComponent<TargetMarker>().targetTransform.position;
         ResetRigidBodyMovement();
@@ -224,5 +224,15 @@ public class Marker : MonoBehaviour
         attemptMade?.Invoke();
     }
 
-    
+    public void DebugLand()
+    {
+        Debug.Log("stack success: upright + slow on target top");
+        AttachTo(TargetMarker.Instance.gameObject);
+        isGrounded = true;
+
+        SFXManager.Instance.StopAllSfx();
+        SFXManager.Instance.PlayMarkerDropClip(1);
+        successfulStack.Invoke();
+        return;
+    }
 }

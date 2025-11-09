@@ -66,7 +66,9 @@ public class CameraController : MonoBehaviour
 
     private IEnumerator SpinAround()
     {
-        //rotationCinemachine.SetActive(true);
+        mainCam.SetActive(false);
+        followCam.SetActive(true);
+        
         float totalRotation = 0f;
         while (totalRotation < 360f * numOfRoations) // full circle
         {

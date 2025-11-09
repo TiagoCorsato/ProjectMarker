@@ -1,6 +1,7 @@
 using TMPro;
 using UnityEngine;
 using System.Globalization;
+using UnityEngine.UI;
 
 public class DebugController : MonoBehaviour
 {
@@ -8,6 +9,7 @@ public class DebugController : MonoBehaviour
     [SerializeField] TMP_InputField curveForce;
     [SerializeField] TMP_InputField curveDuration;
     [SerializeField] TMP_InputField flipForce;
+    [SerializeField] Button landMarkerButton;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -32,6 +34,9 @@ public class DebugController : MonoBehaviour
         curveForce.text = Marker.Instance.curveForce.ToString();
         curveDuration.text = Marker.Instance.curveDuration.ToString();
         flipForce.text = Marker.Instance.flipForce.ToString();
+
+        if (!landMarkerButton) return;
+        landMarkerButton.onClick.AddListener(OnLandMarkerClicked);
     }
 
     void OnDestroy()
@@ -70,5 +75,10 @@ public class DebugController : MonoBehaviour
         if (!Marker.Instance) return;
         if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var f)) return;
         Marker.Instance.SetFlipForce(f);
+    }
+
+    void OnLandMarkerClicked()
+    {
+        Marker.Instance.DebugLand();
     }
 }
