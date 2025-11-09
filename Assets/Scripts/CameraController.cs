@@ -63,24 +63,4 @@ public class CameraController : MonoBehaviour
         yield return new WaitForSeconds(seconds); // comment: uses scaled time
         action.Invoke();
     }
-
-    // void InitializeCamera()
-    // {
-    //     camInstance = Instantiate(mainCam, transform.position, Quaternion.identity);
-    //     cinemachineInstance = Instantiate(cinemachineCam, transform.position, Quaternion.identity);
-
-    //     camInstance.transform.SetParent(transform, true);
-    //     cinemachineInstance.transform.SetParent(transform, true);
-
-    //     CameraTarget target = new CameraTarget();
-    //     target.TrackingTarget = lookAtTarget;
-    //     cinemachineInstance.GetComponent<CinemachineCamera>().Target = target;
-
-    //     cameraMainTransform = camInstance.transform;
-
-    //     // Radar Camera
-    //     GameObject radarCamInstance = Instantiate(radarCam, transform.position, radarCam.transform.rotation);
-    //     radarCamInstance.transform.SetParent(transform, true);
-    //     radarCamInstance.transform.position = new Vector3(0f, 22f, 0f);
-    // }
 }
