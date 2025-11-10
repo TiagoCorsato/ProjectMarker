@@ -22,6 +22,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] CinemachineBrain brain;
     [SerializeField] GameObject followCam;
     [SerializeField] GameObject virtualCam;
+    [SerializeField] GameObject closeUpCam;
     
     [ExecuteInEditMode]
     void OnEnable() 
@@ -67,7 +68,7 @@ public class CameraController : MonoBehaviour
     {
         //virtualCam.SetActive(false);
         followCam.SetActive(true);
-        
+
         float totalRotation = 0f;
         while (totalRotation < 360f * numOfRoations) // full circle
         {
@@ -77,5 +78,15 @@ public class CameraController : MonoBehaviour
             yield return null;
         }
         // Optional: end spin or switch back to normal cam
+    }
+
+    public void EnableCloseUp()
+    {
+        closeUpCam.SetActive(true);
+    }
+    
+    public void DisableCloseUp()
+    {
+        closeUpCam.SetActive(false);
     }
 }
