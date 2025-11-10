@@ -21,7 +21,7 @@ public class CameraController : MonoBehaviour
     [SerializeField] CinemachineOrbitalFollow orbitalFollow;
     [SerializeField] CinemachineBrain brain;
     [SerializeField] GameObject followCam;
-    [SerializeField] GameObject mainCam;
+    [SerializeField] GameObject virtualCam;
     
     [ExecuteInEditMode]
     void OnEnable() 
@@ -29,7 +29,6 @@ public class CameraController : MonoBehaviour
         if(brain)
         {
             Debug.Log("Resetting Camera");
-            brain.enabled = false;
             brain.gameObject.transform.position = defaultCameraPos;
             Camera.main.transform.rotation = Quaternion.Euler(defaultCameraRot);
         }
@@ -54,7 +53,7 @@ public class CameraController : MonoBehaviour
     
     void ActivateFollowCam()
     {
-        mainCam.SetActive(false);
+        //virtualCam.SetActive(false);
         followCam.SetActive(true);
     }
     static IEnumerator Delay(float seconds, System.Action action)
@@ -66,7 +65,7 @@ public class CameraController : MonoBehaviour
 
     private IEnumerator SpinAround()
     {
-        mainCam.SetActive(false);
+        //virtualCam.SetActive(false);
         followCam.SetActive(true);
         
         float totalRotation = 0f;
