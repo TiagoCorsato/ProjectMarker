@@ -1,3 +1,4 @@
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
 
@@ -21,13 +22,14 @@ public class Marker : MonoBehaviour
     Plane grabPlane;
     [SerializeField] float dragLerp = 80f;
     [SerializeField] float pickupRot = 20f;
-    [SerializeField] public float impulseScale = 30f;
+    public float impulseScale = 30f;
     Rigidbody rb;
     Transform originalParent;
 
+    [SerializeField] Transform markerBottomCenter;
     Vector3 lastAngularVelocity;    
-    [SerializeField] public float curveForce = 0.05f;      // strength of curve
-    [SerializeField] public float curveDuration = 0.5f;    // how long the curve effect lasts (seconds)
+    public float curveForce = 0.05f;      // strength of curve
+    public float curveDuration = 0.5f;    // how long the curve effect lasts (seconds)
     [SerializeField] AnimationCurve curveFalloff;   // optional curve editor (0–1)
     public float flipForce = 1.5f;
     float throwTime;                                // when throw started
@@ -62,6 +64,29 @@ public class Marker : MonoBehaviour
         curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
     }
 
+    void Update()
+    {
+        HitDetector();
+    }
+
+    private void HitDetector()
+    {
+        if (!isThrown) return;
+        if (Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, 10))
+        {
+            if (hit.collider.CompareTag("MarkerTarget"))
+            {
+                Debug.DrawLine(markerBottomCenter.position, -transform.up * 10, Color.red, 0.01f);
+                Debug.DrawRay(hit.point, hit.normal * 1f, Color.magenta, .01f);
+                Time.timeScale = 0.0f; 
+            } else
+            {
+                Debug.DrawLine(markerBottomCenter.position, -transform.up * 10, Color.white, 0.01f);
+                Time.timeScale = 1f;    
+            }
+        } 
+    }
+    
     void LateUpdate()
     {
         if (!isThrown) return;
@@ -88,6 +113,7 @@ public class Marker : MonoBehaviour
     public void ResetMarker()
     {
         Debug.Log("Resetting Marker");
+        Time.timeScale = 1f;
         if (!AudioManager.Instance.IsPlaying())
         {
             AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
@@ -214,7 +240,7 @@ public class Marker : MonoBehaviour
         rb.useGravity = true; 
 
         rb.AddForce(dir * power * impulseScale, ForceMode.Impulse);
-
+        // Debug.Log($"dir {dir}, dir.x {dir.x}, power {power}, impulseScale");
         // Flip and curve spins
         rb.AddTorque(transform.right * flipForce, ForceMode.Impulse);  // small flip
         rb.AddTorque(transform.up * dir.x * 1f, ForceMode.Impulse); // subtle curve spin
@@ -224,6 +250,26 @@ public class Marker : MonoBehaviour
         attemptMade?.Invoke();
     }
 
+    public void DebugThrow()
+    {
+        Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
+        transform.rotation = newRot;
+        isHeld = false;
+        isThrown = true;
+        throwTime = Time.time;
+
+        rb.linearVelocity = Vector3.zero;
+        rb.angularVelocity = Vector3.zero;
+        rb.useGravity = true;
+        var dir = new Vector3(0.00f, 0.18f, 1f);
+        rb.AddForce(dir * 1 * impulseScale, ForceMode.Impulse);
+
+        // Flip and curve spins
+        rb.AddTorque(transform.right * flipForce, ForceMode.Impulse);  // small flip
+        rb.AddTorque(transform.up * dir.x * 1f, ForceMode.Impulse); // subtle curve spin
+
+        rb.AddForce(Vector3.down * 3f, ForceMode.Impulse);
+    }
     public void DebugLand()
     {
         Debug.Log("stack success: upright + slow on target top");
