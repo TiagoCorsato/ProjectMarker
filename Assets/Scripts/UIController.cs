@@ -39,7 +39,7 @@ public class UIController : MonoBehaviour
     void Start()
     {
         OnMenuClicked();
-
+        AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
         Marker.Instance.successfulStack.AddListener(OnSuccess);
     }
 

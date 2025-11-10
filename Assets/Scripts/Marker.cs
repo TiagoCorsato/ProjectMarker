@@ -1,3 +1,5 @@
+using System;
+using System.Collections;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Events;
@@ -42,6 +44,13 @@ public class Marker : MonoBehaviour
     [SerializeField] float maxImpact = 12f;
     [SerializeField] AnimationCurve loudnessCurve = AnimationCurve.EaseInOut(0, 0, 1, 1);
 
+    // time dilation properties
+    [SerializeField] float freezeDuration = 0.2f;   // how long completely frozen
+    [SerializeField] float recoverDuration = 0.8f;  // how long to ramp back
+    [SerializeField] float minTimeScale = 0.0f;     // can make this > 0 for slow-mo instead of full stop
+    [SerializeField] float minAudio = 0.3f;         // quietest point
+    bool isRecovering;
+
     public void SetImpulseForce(float force) => impulseScale = force;
     public void SetCurveForce(float force) => curveForce = force;
     public void SetCurveDuration(float duration) => curveDuration = duration;
@@ -72,19 +81,78 @@ public class Marker : MonoBehaviour
     private void HitDetector()
     {
         if (!isThrown) return;
-        if (Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, 10))
+
+        float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
+        bool selfUpright = selfAlignment > selfAlignmentThreshold;
+
+        if (!selfUpright)
         {
-            if (hit.collider.CompareTag("MarkerTarget"))
+            SetTimeAndAudioNormal();
+            return;
+        }
+
+        if (!Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, 10f))
+        {
+            if (!isRecovering)
             {
-                Debug.DrawLine(markerBottomCenter.position, -transform.up * 10, Color.red, 0.01f);
-                Debug.DrawRay(hit.point, hit.normal * 1f, Color.magenta, .01f);
-                Time.timeScale = 0.0f; 
-            } else
-            {
-                Debug.DrawLine(markerBottomCenter.position, -transform.up * 10, Color.white, 0.01f);
-                Time.timeScale = 1f;    
+                SetTimeAndAudioNormal();
+                return;
             }
-        } 
+        }
+
+        float targetAlignment = Vector3.Dot(hit.normal, Vector3.up);
+        bool targetUpright = targetAlignment > alignmentThreshold;
+        if (!hit.collider.CompareTag("MarkerTarget") && targetUpright)
+        {
+            if (!isRecovering) SetTimeAndAudioNormal();
+            Debug.DrawLine(markerBottomCenter.position, markerBottomCenter.position + -transform.up * 10f, Color.white, 0.01f);
+            return;
+        }
+        
+        // we hit the target
+        Debug.DrawLine(markerBottomCenter.position, markerBottomCenter.position + -transform.up * 10f, Color.red, 0.01f);
+        Debug.DrawRay(hit.point, hit.normal * 1f, Color.magenta, 0.01f);
+        if (isRecovering) return;
+        StartCoroutine(FreezeAndRecover());
+    }
+    
+
+    private void SetTimeAndAudioNormal()
+    {
+        Time.timeScale = 1f;
+        AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", 1f);
+    }
+
+    IEnumerator FreezeAndRecover()
+    {
+        isRecovering = true;
+        Time.timeScale = minTimeScale;
+        AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", minAudio);
+
+        float t = 0f;
+        while (t < freezeDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            yield return null;
+        }
+
+        t = 0f;
+        while (t < recoverDuration)
+        {
+            t += Time.unscaledDeltaTime;
+            float alpha = Mathf.Clamp01(t / recoverDuration);
+
+            float currentTimeScale = Mathf.Lerp(minTimeScale, 1f, alpha);
+            float currentAudio = Mathf.Lerp(minAudio, 1f, alpha);
+
+            Time.timeScale = currentTimeScale;
+            AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", currentAudio);
+
+            yield return null;
+        }
+
+        SetTimeAndAudioNormal();
+        isRecovering = false;
     }
     
     void LateUpdate()
@@ -114,6 +182,7 @@ public class Marker : MonoBehaviour
     {
         Debug.Log("Resetting Marker");
         Time.timeScale = 1f;
+        AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", 1f);
         if (!AudioManager.Instance.IsPlaying())
         {
             AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
@@ -135,7 +204,7 @@ public class Marker : MonoBehaviour
     {
         bool isTarget = collision.collider.CompareTag("MarkerTarget");
         bool hitTop = false;
-
+        return;
         foreach (var contact in collision.contacts)
         {
             if (Vector3.Dot(contact.normal, Vector3.up) > 0.5f)

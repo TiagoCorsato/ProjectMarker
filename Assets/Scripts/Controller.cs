@@ -41,7 +41,7 @@ public class Controller : MonoBehaviour
 
     private void Start() 
     {
-        AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
+        
     }
     void OnTouchStarted(InputAction.CallbackContext context)
     {
