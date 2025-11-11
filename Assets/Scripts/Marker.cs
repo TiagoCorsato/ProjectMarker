@@ -332,8 +332,6 @@ public class Marker : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (!isGrounded) return;
-
         float groundImpact = collision.relativeVelocity.magnitude;
         float tg = Mathf.InverseLerp(minImpact, maxImpact, groundImpact);
         SFXManager.Instance.StopAllSfx();

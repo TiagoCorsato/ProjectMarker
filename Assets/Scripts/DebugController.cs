@@ -9,6 +9,7 @@ public class DebugController : MonoBehaviour
     [SerializeField] TMP_InputField curveForce;
     [SerializeField] TMP_InputField curveDuration;
     [SerializeField] TMP_InputField flipForce;
+    [SerializeField] TMP_InputField arcPower;
     [SerializeField] Button landMarkerButton;
 
     // Start is called once before the first execution of Update after the MonoBehaviour is created
@@ -30,10 +31,15 @@ public class DebugController : MonoBehaviour
         flipForce.contentType = TMP_InputField.ContentType.DecimalNumber;
         flipForce.onValueChanged.AddListener(OnFlipForceChanged);
 
+        if (!arcPower) return;
+        arcPower.contentType = TMP_InputField.ContentType.DecimalNumber;
+        arcPower.onValueChanged.AddListener(OnArcPowerChanged);
+
         impulseForce.text = Marker.Instance.impulseScale.ToString();
         curveForce.text = Marker.Instance.curveForce.ToString();
         curveDuration.text = Marker.Instance.curveDuration.ToString();
         flipForce.text = Marker.Instance.flipForce.ToString();
+        arcPower.text = Controller.Instance.arcThrowPower.ToString();
 
         if (!landMarkerButton) return;
         landMarkerButton.onClick.AddListener(OnLandMarkerClicked);
@@ -75,6 +81,14 @@ public class DebugController : MonoBehaviour
         if (!Marker.Instance) return;
         if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var f)) return;
         Marker.Instance.SetFlipForce(f);
+    }
+
+    void OnArcPowerChanged(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return;
+        if (!Controller.Instance) return;
+        if (!float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out var f)) return;
+        Controller.Instance.arcThrowPower = f;
     }
 
     void OnLandMarkerClicked()

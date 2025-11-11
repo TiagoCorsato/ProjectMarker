@@ -10,6 +10,7 @@ public class Controller : MonoBehaviour
     public UnityEvent ObjectThrown;
     Vector2 startPos;
     float swipeStartTime;
+    public float arcThrowPower = 0.5f;
 
     // Debugging properties 
     [SerializeField] float rayMax = 50f;
@@ -100,7 +101,7 @@ public class Controller : MonoBehaviour
         ObjectThrown.Invoke();
     }
 
-    private static Vector3 TryGetWorldThrow(Vector2 swipe, Camera cam, float swipeSpeed)
+    private Vector3 TryGetWorldThrow(Vector2 swipe, Camera cam, float swipeSpeed)
     {
         // base forward
         Vector3 forward = cam.transform.forward;
@@ -110,12 +111,9 @@ public class Controller : MonoBehaviour
         // normalized swipe direction (screen space)
         Vector2 swipeDir = swipe.normalized;
 
-        // influence factor - faster swipes exaggerate the angle a bit
-        float influence = Mathf.Clamp01(swipeSpeed / 2000f);
-
         // add a bit of upward and sideways aim
         Vector3 throwDir =
-            forward + up * 0.25f // lower arc bias
+            forward + up * arcThrowPower // arc throw
             + right * (swipeDir.x * 0.25f)
             + up * (swipeDir.y * 0.4f);
 

@@ -871,7 +871,7 @@ MonoBehaviour:
     m_RotationOrder: 4
   curveForce: 0.05
   curveDuration: 0.3
-  flipForce: 1.4
+  flipForce: 2.2
   rayMaxDistance: 15.53
   selfAlignmentThreshold: 0.995
   alignmentThreshold: 0
@@ -2614,6 +2614,7 @@ MonoBehaviour:
   ObjectThrown:
     m_PersistentCalls:
       m_Calls: []
+  arcThrowPower: 0.5
   rayMax: 50
   rayDur: 0.25
 --- !u!114 &1806264128
@@ -2852,14 +2853,6 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1806264130}
     - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 4
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 195888361}
@@ -2875,22 +2868,6 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Target
       value: 
       objectReference: {fileID: 1806264128}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
-      value: StopRotation
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
-      value: CameraController, Assembly-CSharp
-      objectReference: {fileID: 0}
-    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
-      objectReference: {fileID: 0}
     - target: {fileID: 4732319485883764339, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
       propertyPath: m_Pivot.x
       value: 0
