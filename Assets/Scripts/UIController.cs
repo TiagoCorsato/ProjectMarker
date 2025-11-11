@@ -6,7 +6,7 @@ using UnityEngine.UI;
 public class UIController : MonoBehaviour
 {
     public GameObject menuUI;
-    public GameObject volumeUI;
+    public GameObject settingsUI;
     public GameObject gameHUD;
     public TextMeshProUGUI attemptCountText;
     public Slider musicSlider;
@@ -108,13 +108,13 @@ public class UIController : MonoBehaviour
         GameManager.Instance.PauseState(true);
         menuUI.SetActive(true);
         gameHUD.SetActive(false);
-        volumeUI.SetActive(false);
+        settingsUI.SetActive(false);
     }
 
-    public void OnVolumeClicked()
+    public void OnSettingsClicked()
     {
-        volumeUI.SetActive(!volumeUI.activeSelf);
-        menuUI.SetActive(!volumeUI.activeSelf);
+        settingsUI.SetActive(!settingsUI.activeSelf);
+        menuUI.SetActive(!settingsUI.activeSelf);
     }
 
     public void UpdateAttemptCounter(int NumOfAttempts)
