@@ -502,7 +502,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Unity.Cinemachine::Unity.Cinemachine.CinemachineBrain
   ShowDebugText: 0
   ShowCameraFrustum: 1
-  IgnoreTimeScale: 0
+  IgnoreTimeScale: 1
   WorldUpOverride: {fileID: 0}
   ChannelMask: -1
   UpdateMethod: 2
@@ -511,7 +511,7 @@ MonoBehaviour:
     Enabled: 0
     DefaultMode: 2
   DefaultBlend:
-    Style: 1
+    Style: 2
     Time: 0.3
     CustomCurve:
       serializedVersion: 2
@@ -824,9 +824,9 @@ MonoBehaviour:
   hasResolvedThrow: 0
   dragLerp: 80
   pickupRot: -40
-  impulseScale: 46.3
+  impulseScale: 38.67
   markerBottomCenter: {fileID: 991084145}
-  debugThrow: {x: 0, y: 0, z: 0}
+  debugThrow: {x: 0, y: 0.5, z: 0.4}
   curveFalloff:
     serializedVersion: 2
     m_Curve:
@@ -871,15 +871,15 @@ MonoBehaviour:
     m_RotationOrder: 4
   curveForce: 0.05
   curveDuration: 0.3
-  flipForce: 2.4
-  rayMaxDistance: 0.3
+  flipForce: 1.4
+  rayMaxDistance: 15.53
   selfAlignmentThreshold: 0.995
-  alignmentThreshold: 0.995
+  alignmentThreshold: 0
   velocityThreshold: 1
   targetLayer:
     serializedVersion: 2
-    m_Bits: 0
-  snapRadius: 0.03
+    m_Bits: 8
+  snapRadius: 0.5
   nearMissRadius: 0.12
   settleSpeed: 0.5
   speed: 0
@@ -909,9 +909,9 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
-  freezeDuration: 0.5
-  recoverDuration: 0.8
-  minTimeScale: 0
+  freezeDuration: 1.6
+  recoverDuration: 1
+  minTimeScale: 0.1
   minAudio: 0.3
 --- !u!54 &726538341
 Rigidbody:
@@ -937,7 +937,7 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 0
-  m_Interpolate: 1
+  m_Interpolate: 0
   m_Constraints: 0
   m_CollisionDetection: 1
 --- !u!135 &726538342
@@ -1364,7 +1364,7 @@ Transform:
   m_GameObject: {fileID: 991084144}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -2.515, z: 0}
+  m_LocalPosition: {x: 0, y: -2.595, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1668,6 +1668,7 @@ Transform:
   - {fileID: 330585546}
   - {fileID: 855312363}
   - {fileID: 195888365}
+  - {fileID: 1601994778}
   - {fileID: 410087041}
   - {fileID: 832575519}
   m_Father: {fileID: 0}
@@ -1964,7 +1965,7 @@ GameObject:
   - component: {fileID: 1300591509}
   - component: {fileID: 1300591512}
   m_Layer: 0
-  m_Name: Cylinder
+  m_Name: Body
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2111,7 +2112,7 @@ GameObject:
   - component: {fileID: 1482138293}
   - component: {fileID: 1482138292}
   m_Layer: 0
-  m_Name: Cylinder (1)
+  m_Name: Cap
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2188,6 +2189,77 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1482138289}
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1601994776
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1178174389}
+    m_Modifications:
+    - target: {fileID: 2609122452322944033, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_Name
+      value: CloseUpCam
+      objectReference: {fileID: 0}
+    - target: {fileID: 4618173377924078999, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: Target.TrackingTarget
+      value: 
+      objectReference: {fileID: 726538339}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -24.436653
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.047597
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.81701636
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.70555174
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.008457352
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.70855683
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0.008512672
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+--- !u!1 &1601994777 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2609122452322944033, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+  m_PrefabInstance: {fileID: 1601994776}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &1601994778 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5983450161233635310, guid: 9cc4322d8bcb7a547ba02b0ad3b2e659, type: 3}
+  m_PrefabInstance: {fileID: 1601994776}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1660959806
 GameObject:
   m_ObjectHideFlags: 0
@@ -2359,7 +2431,7 @@ GameObject:
   - component: {fileID: 1757034668}
   m_Layer: 0
   m_Name: Cylinder
-  m_TagString: Untagged
+  m_TagString: ThrowObject
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2567,7 +2639,7 @@ MonoBehaviour:
   brain: {fileID: 330585548}
   followCam: {fileID: 195888361}
   virtualCam: {fileID: 855312362}
-  closeUpCam: {fileID: 0}
+  closeUpCam: {fileID: 1601994777}
 --- !u!114 &1806264129
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2635,9 +2707,10 @@ GameObject:
   - component: {fileID: 2138436868}
   - component: {fileID: 2138436867}
   - component: {fileID: 2138436869}
-  m_Layer: 0
-  m_Name: Cylinder (2)
-  m_TagString: MarkerTarget
+  - component: {fileID: 2138436870}
+  m_Layer: 3
+  m_Name: Tip
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2730,11 +2803,34 @@ MeshCollider:
   m_LayerOverridePriority: 0
   m_IsTrigger: 0
   m_ProvidesContacts: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 5
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!136 &2138436870
+CapsuleCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2138436864}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 2
+  m_Radius: 0.5000001
+  m_Height: 2.0000002
+  m_Direction: 1
+  m_Center: {x: 0.000000059604645, y: 0, z: -0.00000008940697}
 --- !u!1001 &4163342569845385233
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2756,6 +2852,14 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1806264130}
     - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 195888361}
@@ -2767,6 +2871,26 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Target
       value: 
       objectReference: {fileID: 1806264130}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Target
+      value: 
+      objectReference: {fileID: 1806264128}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_MethodName
+      value: StopRotation
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_TargetAssemblyTypeName
+      value: CameraController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 4245752100909941302, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[3].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 4732319485883764339, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
       propertyPath: m_Pivot.x
       value: 0

@@ -59,7 +59,7 @@ public class Marker : MonoBehaviour
     [SerializeField] float settleSpeed = 0.5f;
     [SerializeField] float speed = 0.0f;
     float bestCenterDistance;
-    
+
     [Header("Impact Loudness")]
     [SerializeField] float minImpact = 0.5f;
     [SerializeField] float maxImpact = 12f;
@@ -70,7 +70,7 @@ public class Marker : MonoBehaviour
     [SerializeField] float recoverDuration = 0.8f; // how long to ramp back
     [SerializeField] float minTimeScale = 0.0f;    // > 0 for slow-mo instead of full stop
     [SerializeField] float minAudio = 0.3f;        // quietest point
-    
+
     public void SetImpulseForce(float force) => impulseScale = force;
     public void SetCurveForce(float force) => curveForce = force;
     public void SetCurveDuration(float duration) => curveDuration = duration;
@@ -90,58 +90,138 @@ public class Marker : MonoBehaviour
         originalRot = transform.rotation;
 
         if (curveFalloff == null || curveFalloff.length == 0)
-        curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
+            curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
     }
 
     void LateUpdate()
     {
         HitDetector();
 
-        if (!isThrown || hasResolvedThrow) return;
-        if (Time.time - throwTime < minAirTime) return;
+        // if (!isThrown || hasResolvedThrow) return;
+        // if (Time.time - throwTime < minAirTime) return;
 
-        speed = rb.linearVelocity.magnitude;
-        // Debug.Log($"speed {speed}, settleSpeed {settleSpeed}, linearVel {rb.linearVelocity}");
-        if (speed > settleSpeed) return;
+        // speed = rb.linearVelocity.magnitude;
+        // // Debug.Log($"speed {speed}, settleSpeed {settleSpeed}, linearVel {rb.linearVelocity}");
+        // if (speed > settleSpeed) return;
 
-        ResolveThrowResult();
+        // ResolveThrowResult();
     }
     
+    void FixedUpdate()
+    {
+        if (!isThrown) return;
+        float elapsed = Time.time - throwTime;
+        if (elapsed > curveDuration) return; // stop applying after duration
+
+        // How strong the curve is right now (fades out)
+        float t = elapsed / curveDuration;
+        float fade = curveFalloff.Evaluate(t); // 1 → 0 over time
+
+        // Cross product simulates lift from spin
+        Vector3 liftDir = Vector3.Cross(rb.angularVelocity, rb.linearVelocity);
+        rb.AddForce(liftDir * curveForce * fade, ForceMode.Force);
+
+    }
     private void HitDetector()
     {
-        if (!isThrown || hasResolvedThrow) return;
+        RaycastHit hit;
+        if (!isThrown) return; 
 
-        // must be upright enough
-        float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
-        selfUpright = selfAlignment > selfAlignmentThreshold;
-        if (!selfUpright) return;
-
-        // visualize the ray
-        Debug.DrawLine(
-            markerBottomCenter.position,
-            markerBottomCenter.position + -transform.up * rayMaxDistance,
-            Color.yellow, 0.1f);
-
-        // must be above target layer
-        if (!Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, rayMaxDistance, targetLayer.value))
+        float selfAlignment = Vector3.Dot(transform.up, Vector3.up); selfUpright = selfAlignment > selfAlignmentThreshold;
+        // if its not vertical 
+        if (!selfUpright) { SetTimeAndAudioNormal(); return; }
+        
+        Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.yellow, 1f);
+        
+        // if its not hitting anything 
+        if (!Physics.Raycast(markerBottomCenter.position, -markerBottomCenter.up, out hit, rayMaxDistance, targetLayer.value))
+        {
+            Debug.DrawLine(markerBottomCenter.position, hit.point * rayMaxDistance, Color.blue, 10f);
+            if (!isRecovering) SetTimeAndAudioNormal();
             return;
+        }
+        
+        Debug.Log($"raycast hit {hit.collider.name} on layer {hit.collider.gameObject.layer}, distance {hit.distance}");
 
-        // horizontal distance (ignore y)
+        bool onTargetLayer = (targetLayer.value & (1 << hit.collider.gameObject.layer)) != 0;
+        if (!onTargetLayer)
+        {
+            if (!isRecovering) SetTimeAndAudioNormal();
+            Debug.Log("hit something, but NOT on targetLayer"); return;
+        }
+        Debug.Log($"raycast hit {hit.collider.name} on layer {hit.collider.gameObject.layer}, distance {hit.distance}");
         Vector2 markerXZ = new Vector2(transform.position.x, transform.position.z);
         Vector2 targetXZ = new Vector2(hit.collider.transform.position.x, hit.collider.transform.position.z);
         float centerDistance = Vector2.Distance(markerXZ, targetXZ);
 
-        if (centerDistance < bestCenterDistance)
-            bestCenterDistance = centerDistance;
+        Debug.Log($"centerDistance = {centerDistance}, snapRadius = {snapRadius}, nearMissRadius = {nearMissRadius}");
+        // perfect stack
+        if (centerDistance <= snapRadius)
+        {
+            Debug.Log("stack success: upright + close enough");
+            AttachTo(hit.collider.gameObject);
+            isGrounded = true;
+            SFXManager.Instance.StopAllSfx();
+            SFXManager.Instance.PlayMarkerDropClip(1);
+            successfulStack.Invoke();
+            Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.red, 15f);
+            Debug.DrawRay(hit.point, hit.normal * 1f, Color.magenta, 15f);
+            if (isRecovering) return;
 
-        Debug.Log($"[HitDetector] current={centerDistance}, best={bestCenterDistance}");
+            CameraController.Instance.EnableCloseUp();
+            StartCoroutine(FreezeAndRecover()); return;
+        }
+        // near miss -> slow-mo fail (no snap) 
+        if (centerDistance <= nearMissRadius)
+        {
+            Debug.Log("near miss: upright but offset (slow-mo fail)");
+            isGrounded = true;
+            SFXManager.Instance.StopAllSfx();
+            SFXManager.Instance.PlayFailClip();
+            Debug.DrawLine(markerBottomCenter.position, markerBottomCenter.position + -transform.up * rayMaxDistance, Color.cyan, 0.5f);
+            if (!isRecovering) 
+            { 
+                CameraController.Instance.EnableCloseUp(); StartCoroutine(FreezeAndRecover()); 
+            }
+            return;
+        }
+        // too far -> normal land, no slow - mo 
+        Debug.Log("wide miss: treat as normal ground contact"); isGrounded = true; if (!isRecovering) SetTimeAndAudioNormal();
+
+
+        // if (!isThrown || hasResolvedThrow) return;
+
+        // // must be upright enough
+        // float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
+        // selfUpright = selfAlignment > selfAlignmentThreshold;
+        // if (!selfUpright) return;
+
+        // // visualize the ray
+        // Debug.DrawLine(
+        //     markerBottomCenter.position,
+        //     markerBottomCenter.position + -transform.up * rayMaxDistance,
+        //     Color.yellow, 0.1f);
+
+        // // must be above target layer
+        // if (!Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, rayMaxDistance, targetLayer.value))
+        //     return;
+
+        // // horizontal distance (ignore y)
+        // Vector2 markerXZ = new Vector2(transform.position.x, transform.position.z);
+        // Vector2 targetXZ = new Vector2(hit.collider.transform.position.x, hit.collider.transform.position.z);
+        // float centerDistance = Vector2.Distance(markerXZ, targetXZ);
+
+        // if (centerDistance < bestCenterDistance)
+        //     bestCenterDistance = centerDistance;
+
+        // Debug.Log($"[HitDetector] current={centerDistance}, best={bestCenterDistance}");
     }
 
     void ResolveThrowResult()
     {
         hasResolvedThrow = true;
-        isThrown         = false;
-        isGrounded       = true;
+        isThrown = false;
+        isGrounded = true;
 
         Debug.Log($"resolving throw with bestDist={bestCenterDistance}");
 
@@ -177,7 +257,7 @@ public class Marker : MonoBehaviour
             SetTimeAndAudioNormal();
         }
     }
-    
+
     private void SetTimeAndAudioNormal()
     {
         Time.timeScale = 1f;
@@ -186,6 +266,7 @@ public class Marker : MonoBehaviour
 
     IEnumerator FreezeAndRecover()
     {
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
         isRecovering = true;
         Time.timeScale = minTimeScale;
         AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", minAudio);
@@ -216,22 +297,7 @@ public class Marker : MonoBehaviour
         isRecovering = false;
         CameraController.Instance.DisableCloseUp();
     }
-    
-    void FixedUpdate()
-    {
-        if (!isThrown) return;
-        float elapsed = Time.time - throwTime;
-        if (elapsed > curveDuration) return; // stop applying after duration
 
-        // How strong the curve is right now (fades out)
-        float t = elapsed / curveDuration;
-        float fade = curveFalloff.Evaluate(t); // 1 → 0 over time
-
-        // Cross product simulates lift from spin
-        Vector3 liftDir = Vector3.Cross(rb.angularVelocity, rb.linearVelocity);
-        rb.AddForce(liftDir * curveForce * fade, ForceMode.Force);
-        
-    }
 
     void ResetRigidBodyMovement()
     {
@@ -242,22 +308,23 @@ public class Marker : MonoBehaviour
 
     public void ResetMarker()
     {
+        rb.interpolation = RigidbodyInterpolation.None;
         Debug.Log("Resetting Marker");
         Time.timeScale = 1f;
         AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", 1f);
         if (!AudioManager.Instance.IsPlaying())
         {
-            AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);  
+            AudioManager.Instance.PlayBgm(AudioManager.Instance.bgmClips[0], .1f);
         }
         AudioManager.Instance.ResumeBgm();
         SFXManager.Instance.StopAllSfx();
         gameObject.isStatic = false;
         rb.isKinematic = false;
-        rb.detectCollisions = true;        
+        rb.detectCollisions = true;
         isHeld = false;
         isThrown = false;
         isGrounded = false;
-        speed= 0f;
+        speed = 0f;
         ResetRigidBodyMovement();
         rb.MovePosition(originalPos);
         rb.MoveRotation(originalRot);
@@ -265,8 +332,8 @@ public class Marker : MonoBehaviour
 
     void OnCollisionEnter(Collision collision)
     {
-        if (!isGrounded) return; 
-        
+        if (!isGrounded) return;
+
         float groundImpact = collision.relativeVelocity.magnitude;
         float tg = Mathf.InverseLerp(minImpact, maxImpact, groundImpact);
         SFXManager.Instance.StopAllSfx();
@@ -301,13 +368,11 @@ public class Marker : MonoBehaviour
         // transform.SetParent(marker.targetTransform);
         gameObject.isStatic = true;
     }
-    
+
     public void BeginPickup(RaycastHit hit, Camera mainCam)
     {
         isHeld = true;
         ResetRigidBodyMovement();
-        Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
-        transform.rotation = newRot;
         grabOffset = hit.point - transform.position;
         var camFwd = mainCam ? mainCam.transform.forward : Vector3.forward;
         grabPlane = new Plane(-camFwd, hit.point);
@@ -319,6 +384,8 @@ public class Marker : MonoBehaviour
         var ray = mainCam.ScreenPointToRay(screenPos);
         if (!grabPlane.Raycast(ray, out float dist)) return;
 
+        Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
+        transform.rotation = newRot;
         Vector3 planeHit = ray.GetPoint(dist);
         Vector3 target = planeHit - grabOffset;
         Vector3 next = Vector3.Lerp(transform.position, target, dragLerp * dt);
@@ -336,10 +403,10 @@ public class Marker : MonoBehaviour
     {
         Debug.Log($"Throwing {dir} {power}");
 
-        rb.linearVelocity  = Vector3.zero;
+        rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
-        rb.useGravity      = true;
-        rb.isKinematic     = false;
+        rb.useGravity = true;
+        rb.isKinematic = false;
         rb.detectCollisions = true;
 
         isHeld = false;

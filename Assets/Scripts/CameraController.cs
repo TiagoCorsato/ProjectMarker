@@ -51,17 +51,24 @@ public class CameraController : MonoBehaviour
     {
         StartCoroutine(Delay(.1f, ActivateFollowCam));
     }
-    
+
     void OnObjectLanded()
     {
         StartCoroutine(SpinAround());
     }
     
+    public void StopRotation()
+    {
+        totalRotation = 360f * numOfRoations;
+        StopCoroutine(SpinAround());
+    }
+
     void ActivateFollowCam()
     {
         //virtualCam.SetActive(false);
         followCam.SetActive(true);
     }
+    
     static IEnumerator Delay(float seconds, System.Action action)
     {
         if (seconds < 0f) seconds = 0f;           // comment: defensive clamp
@@ -69,12 +76,12 @@ public class CameraController : MonoBehaviour
         action.Invoke();
     }
 
+    float totalRotation = 0f;
     private IEnumerator SpinAround()
     {
         //virtualCam.SetActive(false);
         followCam.SetActive(true);
 
-        float totalRotation = 0f;
         while (totalRotation < 360f * numOfRoations) // full circle
         {
             float delta = rotationSpeed * Time.deltaTime;
