@@ -647,11 +647,6 @@ MonoBehaviour:
   m_ShadowLayerMask: 1
   m_RenderingLayers: 1
   m_ShadowRenderingLayers: 1
---- !u!224 &410502518 stripped
-RectTransform:
-  m_CorrespondingSourceObject: {fileID: 4732319485883764339, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-  m_PrefabInstance: {fileID: 3509428840807552268}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &652775000
 GameObject:
   m_ObjectHideFlags: 0
@@ -824,12 +819,14 @@ MonoBehaviour:
   isHeld: 0
   isThrown: 0
   isGrounded: 0
+  selfUpright: 0
+  isRecovering: 0
+  hasResolvedThrow: 0
   dragLerp: 80
   pickupRot: -40
   impulseScale: 46.3
   markerBottomCenter: {fileID: 991084145}
-  curveForce: 0.05
-  curveDuration: 0.3
+  debugThrow: {x: 0, y: 0, z: 0}
   curveFalloff:
     serializedVersion: 2
     m_Curve:
@@ -872,10 +869,20 @@ MonoBehaviour:
     m_PreInfinity: 2
     m_PostInfinity: 2
     m_RotationOrder: 4
+  curveForce: 0.05
+  curveDuration: 0.3
   flipForce: 2.4
+  rayMaxDistance: 0.3
   selfAlignmentThreshold: 0.995
   alignmentThreshold: 0.995
   velocityThreshold: 1
+  targetLayer:
+    serializedVersion: 2
+    m_Bits: 0
+  snapRadius: 0.03
+  nearMissRadius: 0.12
+  settleSpeed: 0.5
+  speed: 0
   minImpact: 0.5
   maxImpact: 12
   loudnessCurve:
@@ -2482,7 +2489,7 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1677111768}
-  - {fileID: 410502518}
+  - {fileID: 8151354315858680703}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1806264124
@@ -2728,7 +2735,7 @@ MeshCollider:
   m_Convex: 1
   m_CookingOptions: 30
   m_Mesh: {fileID: 10206, guid: 0000000000000000e000000000000000, type: 0}
---- !u!1001 &3509428840807552268
+--- !u!1001 &4163342569845385233
 PrefabInstance:
   m_ObjectHideFlags: 0
   serializedVersion: 2
@@ -2736,10 +2743,6 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1793854749}
     m_Modifications:
-    - target: {fileID: 16197478208275260, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
-      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
-      value: 
-      objectReference: {fileID: 1806264130}
     - target: {fileID: 1299416036519113502, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -2852,11 +2855,20 @@ PrefabInstance:
       propertyPath: m_Name
       value: UIController
       objectReference: {fileID: 0}
+    - target: {fileID: 6699740532989082737, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 1806264130}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+--- !u!224 &8151354315858680703 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 4732319485883764339, guid: 3238cb9419c191344a1ed0feabf64690, type: 3}
+  m_PrefabInstance: {fileID: 4163342569845385233}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

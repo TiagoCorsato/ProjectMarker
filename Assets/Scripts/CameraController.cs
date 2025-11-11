@@ -4,6 +4,7 @@ using UnityEngine;
 
 public class CameraController : MonoBehaviour
 {
+    public static CameraController Instance;
     [Header("Orbit Camera")]
     public CinemachineCamera orbitVcam; 
     
@@ -24,6 +25,10 @@ public class CameraController : MonoBehaviour
     [SerializeField] GameObject virtualCam;
     [SerializeField] GameObject closeUpCam;
     
+    private void Awake() {
+        Instance = this;
+    }
+
     [ExecuteInEditMode]
     void OnEnable() 
     {

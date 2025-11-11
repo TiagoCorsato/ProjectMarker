@@ -52,7 +52,7 @@ public class UIController : MonoBehaviour
 
     UIFountainFlyer CreateFlyer()
     {
-        var go = Instantiate(textPrefab, spawnAnchor).gameObject; 
+        var go = Instantiate(textPrefab, spawnAnchor).gameObject;
         var flyer = go.GetComponent<UIFountainFlyer>() ?? go.AddComponent<UIFountainFlyer>();
         flyer.Initialize(ReturnToPool);
         go.SetActive(false);
