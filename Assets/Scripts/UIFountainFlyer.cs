@@ -15,10 +15,16 @@ public class UIFountainFlyer : MonoBehaviour
     
     void Awake()
     {
-        rt = GetComponent<RectTransform>();
-        tmp = GetComponent<TextMeshProUGUI>();
-        ready = (rt && tmp);
-        if (!ready) { enabled = false; Debug.LogError("uifountainflyer missing recttransform or textmeshpro"); }
+        rt  = GetComponent<RectTransform>() ?? GetComponentInParent<RectTransform>();
+        tmp = GetComponent<TextMeshProUGUI>() ?? GetComponentInChildren<TextMeshProUGUI>();
+
+        ready = (rt != null && tmp != null);
+
+        if (!ready)
+        {
+            enabled = false;
+            Debug.LogError($"uifountainflyer on {gameObject.name} missing recttransform or textmeshpro");
+        }
     }
     public void Initialize(System.Action<UIFountainFlyer> returnToPool)
     {
