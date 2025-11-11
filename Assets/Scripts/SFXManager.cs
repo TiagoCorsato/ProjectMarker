@@ -14,7 +14,6 @@ public class SFXManager : MonoBehaviour
     [SerializeField] List<AudioClip> actionThrowClips;
     [SerializeField] List<AudioClip> throwBGMClips;
     [SerializeField] List<AudioClip> markerDropClips;
-    //[SerializeField] AudioClip buttonClip;
     [SerializeField] List<float> throwBGMIdxs;
     [Header("pool")]
     public int poolSize = 8;
