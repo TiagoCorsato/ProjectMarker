@@ -57,11 +57,6 @@ public class CameraController : MonoBehaviour
         StartCoroutine(SpinAround());
     }
     
-    public void StopRotation()
-    {
-        totalRotation = 360f * numOfRoations;
-        StopCoroutine(SpinAround());
-    }
 
     void ActivateFollowCam()
     {
@@ -76,13 +71,15 @@ public class CameraController : MonoBehaviour
         action.Invoke();
     }
 
-    float totalRotation = 0f;
+    public float totalRotation = 0f;
     private IEnumerator SpinAround()
     {
-        //virtualCam.SetActive(false);
+        //Debug.Log(totalRotation);
+        closeUpCam.SetActive(false);
         followCam.SetActive(true);
-
-        while (totalRotation < 360f * numOfRoations) // full circle
+        totalRotation = 0f;
+        
+        while (totalRotation < 360f * numOfRoations && Marker.Instance.isLanded) // full circle
         {
             float delta = rotationSpeed * Time.deltaTime;
             totalRotation += delta;
@@ -92,8 +89,17 @@ public class CameraController : MonoBehaviour
         // Optional: end spin or switch back to normal cam
     }
 
+    public void StopRotation()
+    {
+        totalRotation = 360f * numOfRoations;
+        StopCoroutine(SpinAround());
+        orbitalFollow.HorizontalAxis.Value = 0f;
+        Debug.Log("Stopped rotation.");
+    }
+
     public void EnableCloseUp()
     {
+        Debug.Log("EnableCloseUp");
         closeUpCam.SetActive(true);
     }
     

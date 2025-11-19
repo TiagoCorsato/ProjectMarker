@@ -24,6 +24,7 @@ public class Marker : MonoBehaviour
     public bool selfUpright;
     public bool isRecovering;
     public bool hasResolvedThrow;
+    public bool isLanded;
 
     [Header("Pickup & Drag")]
     [SerializeField] float dragLerp = 80f;
@@ -131,12 +132,12 @@ public class Marker : MonoBehaviour
         // if its not vertical 
         if (!selfUpright) { SetTimeAndAudioNormal(); return; }
         
-        Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.yellow, 1f);
+        Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.yellow, 3f);
         
         // if its not hitting anything 
         if (!Physics.Raycast(markerBottomCenter.position, -markerBottomCenter.up, out hit, rayMaxDistance, targetLayer.value))
         {
-            Debug.DrawLine(markerBottomCenter.position, hit.point * rayMaxDistance, Color.blue, 10f);
+            Debug.DrawLine(markerBottomCenter.position, hit.point * rayMaxDistance, Color.blue, 6f);
             if (!isRecovering) SetTimeAndAudioNormal();
             return;
         }
@@ -161,6 +162,7 @@ public class Marker : MonoBehaviour
             Debug.Log("stack success: upright + close enough");
             AttachTo(hit.collider.gameObject);
             isGrounded = true;
+            isLanded = true;
             SFXManager.Instance.StopAllSfx();
             SFXManager.Instance.PlayMarkerDropClip(1);
             successfulStack.Invoke();
@@ -181,7 +183,8 @@ public class Marker : MonoBehaviour
             Debug.DrawLine(markerBottomCenter.position, markerBottomCenter.position + -transform.up * rayMaxDistance, Color.cyan, 0.5f);
             if (!isRecovering) 
             { 
-                CameraController.Instance.EnableCloseUp(); StartCoroutine(FreezeAndRecover()); 
+                CameraController.Instance.EnableCloseUp(); 
+                StartCoroutine(FreezeAndRecover()); 
             }
             return;
         }
@@ -215,6 +218,12 @@ public class Marker : MonoBehaviour
         //     bestCenterDistance = centerDistance;
 
         // Debug.Log($"[HitDetector] current={centerDistance}, best={bestCenterDistance}");
+    }
+
+    public void TestSlowMo()
+    {
+        CameraController.Instance.EnableCloseUp(); 
+        StartCoroutine(FreezeAndRecover()); 
     }
 
     void ResolveThrowResult()
@@ -309,7 +318,7 @@ public class Marker : MonoBehaviour
     public void ResetMarker()
     {
         rb.interpolation = RigidbodyInterpolation.None;
-        Debug.Log("Resetting Marker");
+        //Debug.Log("Resetting Marker");
         Time.timeScale = 1f;
         AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", 1f);
         if (!AudioManager.Instance.IsPlaying())
@@ -324,10 +333,13 @@ public class Marker : MonoBehaviour
         isHeld = false;
         isThrown = false;
         isGrounded = false;
+        isLanded = false;
         speed = 0f;
         ResetRigidBodyMovement();
         rb.MovePosition(originalPos);
         rb.MoveRotation(originalRot);
+        CameraController.Instance.StopRotation();
+        StopCoroutine(FreezeAndRecover());
     }
 
     void OnCollisionEnter(Collision collision)
@@ -399,7 +411,7 @@ public class Marker : MonoBehaviour
 
     public void Throw(Vector3 dir, float power)
     {
-        Debug.Log($"Throwing {dir} {power}");
+        //Debug.Log($"Throwing {dir} {power}");
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
