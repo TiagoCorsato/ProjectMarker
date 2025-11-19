@@ -132,17 +132,13 @@ public class Marker : MonoBehaviour
         // if its not vertical 
         if (!selfUpright) { SetTimeAndAudioNormal(); return; }
         
-        Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.yellow, 3f);
-        
         // if its not hitting anything 
-        if (!Physics.Raycast(markerBottomCenter.position, -markerBottomCenter.up, out hit, rayMaxDistance, targetLayer.value))
+        if (!Physics.Raycast(markerBottomCenter.position, -markerBottomCenter.up, out hit, rayMaxDistance, targetLayer))
         {
             Debug.DrawLine(markerBottomCenter.position, hit.point * rayMaxDistance, Color.blue, 6f);
             if (!isRecovering) SetTimeAndAudioNormal();
             return;
         }
-        
-        Debug.Log($"raycast hit {hit.collider.name} on layer {hit.collider.gameObject.layer}, distance {hit.distance}");
 
         bool onTargetLayer = (targetLayer.value & (1 << hit.collider.gameObject.layer)) != 0;
         if (!onTargetLayer)
@@ -151,8 +147,17 @@ public class Marker : MonoBehaviour
             Debug.Log("hit something, but NOT on targetLayer"); return;
         }
         Debug.Log($"raycast hit {hit.collider.name} on layer {hit.collider.gameObject.layer}, distance {hit.distance}");
+
         Vector2 markerXZ = new Vector2(transform.position.x, transform.position.z);
-        Vector2 targetXZ = new Vector2(hit.collider.transform.position.x, hit.collider.transform.position.z);
+
+        TargetMarker tm = hit.collider.GetComponentInParent<TargetMarker>();
+        if (tm == null || tm.targetTransform == null) return;
+
+        Vector2 targetXZ = new Vector2(
+            tm.targetTransform.position.x,
+            tm.targetTransform.position.z
+        );
+
         float centerDistance = Vector2.Distance(markerXZ, targetXZ);
 
         Debug.Log($"centerDistance = {centerDistance}, snapRadius = {snapRadius}, nearMissRadius = {nearMissRadius}");
@@ -166,13 +171,13 @@ public class Marker : MonoBehaviour
             SFXManager.Instance.StopAllSfx();
             SFXManager.Instance.PlayMarkerDropClip(1);
             successfulStack.Invoke();
-            Debug.DrawLine(markerBottomCenter.position, -markerBottomCenter.up * rayMaxDistance, Color.red, 15f);
             Debug.DrawRay(hit.point, hit.normal * 1f, Color.magenta, 15f);
             if (isRecovering) return;
 
             CameraController.Instance.EnableCloseUp();
             StartCoroutine(FreezeAndRecover()); return;
         }
+        
         // near miss -> slow-mo fail (no snap) 
         if (centerDistance <= nearMissRadius)
         {
@@ -180,7 +185,6 @@ public class Marker : MonoBehaviour
             isGrounded = true;
             SFXManager.Instance.StopAllSfx();
             SFXManager.Instance.PlayFailClip();
-            Debug.DrawLine(markerBottomCenter.position, markerBottomCenter.position + -transform.up * rayMaxDistance, Color.cyan, 0.5f);
             if (!isRecovering) 
             { 
                 CameraController.Instance.EnableCloseUp(); 
@@ -190,81 +194,12 @@ public class Marker : MonoBehaviour
         }
         // too far -> normal land, no slow - mo 
         Debug.Log("wide miss: treat as normal ground contact"); isGrounded = true; if (!isRecovering) SetTimeAndAudioNormal();
-
-
-        // if (!isThrown || hasResolvedThrow) return;
-
-        // // must be upright enough
-        // float selfAlignment = Vector3.Dot(transform.up, Vector3.up);
-        // selfUpright = selfAlignment > selfAlignmentThreshold;
-        // if (!selfUpright) return;
-
-        // // visualize the ray
-        // Debug.DrawLine(
-        //     markerBottomCenter.position,
-        //     markerBottomCenter.position + -transform.up * rayMaxDistance,
-        //     Color.yellow, 0.1f);
-
-        // // must be above target layer
-        // if (!Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, rayMaxDistance, targetLayer.value))
-        //     return;
-
-        // // horizontal distance (ignore y)
-        // Vector2 markerXZ = new Vector2(transform.position.x, transform.position.z);
-        // Vector2 targetXZ = new Vector2(hit.collider.transform.position.x, hit.collider.transform.position.z);
-        // float centerDistance = Vector2.Distance(markerXZ, targetXZ);
-
-        // if (centerDistance < bestCenterDistance)
-        //     bestCenterDistance = centerDistance;
-
-        // Debug.Log($"[HitDetector] current={centerDistance}, best={bestCenterDistance}");
     }
 
     public void TestSlowMo()
     {
         CameraController.Instance.EnableCloseUp(); 
         StartCoroutine(FreezeAndRecover()); 
-    }
-
-    void ResolveThrowResult()
-    {
-        hasResolvedThrow = true;
-        isThrown = false;
-        isGrounded = true;
-
-        Debug.Log($"resolving throw with bestDist={bestCenterDistance}");
-
-        if (bestCenterDistance <= snapRadius)
-        {
-            Debug.Log("stack success: upright + close enough (using bestDist)");
-
-            if (Physics.Raycast(markerBottomCenter.position, -transform.up, out var hit, rayMaxDistance, targetLayer))
-            {
-                AttachTo(hit.collider.gameObject);
-            }
-
-            SFXManager.Instance.StopAllSfx();
-            SFXManager.Instance.PlayMarkerDropClip(1);
-            successfulStack.Invoke();
-
-            CameraController.Instance.EnableCloseUp();
-            StartCoroutine(FreezeAndRecover());
-        }
-        else if (bestCenterDistance <= nearMissRadius)
-        {
-            Debug.Log("near miss: very close, but not stack (slow-mo fail)");
-
-            SFXManager.Instance.StopAllSfx();
-            SFXManager.Instance.PlayFailClip();
-
-            CameraController.Instance.EnableCloseUp();
-            StartCoroutine(FreezeAndRecover());
-        }
-        else
-        {
-            Debug.Log("wide miss: normal land");
-            SetTimeAndAudioNormal();
-        }
     }
 
     private void SetTimeAndAudioNormal()
