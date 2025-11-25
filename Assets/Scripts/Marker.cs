@@ -435,24 +435,30 @@ public class Marker : MonoBehaviour
 
             // Apply gravity
             velocity += Physics.gravity * trajectoryTimeStep;
-            
-            // Update position
-            position += velocity * trajectoryTimeStep;
 
-            // Stop if trajectory goes too low
-            if (position.y < -5f) 
+            // Compute next predicted position
+            Vector3 nextPosition = position + velocity * trajectoryTimeStep;
+
+            // Check collision between position → nextPosition
+            if (Physics.Raycast(position, nextPosition - position, out RaycastHit hit, 
+                (nextPosition - position).magnitude, LayerMask.GetMask("Floor")))
             {
+                // Stop trajectory at the hit point
+                points[i] = hit.point;  
                 trajectoryLine.positionCount = i + 1;
                 trajectoryLine.SetPositions(points);
-                
-                // Position end point indicator at last valid position
+
+                // Place endpoint indicator
                 if (showEndPoint && endPointIndicator != null)
                 {
                     endPointIndicator.SetActive(true);
-                    endPointIndicator.transform.position = lastValidPosition + indicatorOffset;
+                    endPointIndicator.transform.position = hit.point + indicatorOffset;
                 }
                 return;
             }
+
+            // No collision → continue
+            position = nextPosition;
         }
 
         trajectoryLine.positionCount = trajectoryPoints;

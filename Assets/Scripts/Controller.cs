@@ -13,6 +13,8 @@ public class Controller : MonoBehaviour
     float swipeStartTime;
     public float arcThrowPower = 0.5f;
 
+    public float peakSwipeSpeed;
+
     // Debugging properties 
     [SerializeField] float rayMax = 50f;
     [SerializeField] float rayDur = 1f;
@@ -49,6 +51,7 @@ public class Controller : MonoBehaviour
         var pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
         startPos = pos;
         swipeStartTime = Time.time;
+        peakSwipeSpeed = 0f; // NEW
 
         var ray = cam.ScreenPointToRay(pos);
         if (Physics.Raycast(ray, out var hit))
@@ -77,12 +80,23 @@ public class Controller : MonoBehaviour
             // Only show trajectory if there's meaningful swipe distance
             if (currentSwipe.magnitude > 30f)
             {
+                // float currentSwipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
+                // float currentSwipeSpeed = currentSwipe.magnitude / currentSwipeTime;
+                
+                // Vector3 throwDir = TryGetWorldThrow(currentSwipe, mainCam, currentSwipeSpeed);
+                // float throwPower = SwipePower(currentSwipeSpeed);
+                
+                // Marker.Instance.ShowLine(throwDir, throwPower);
+
                 float currentSwipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
                 float currentSwipeSpeed = currentSwipe.magnitude / currentSwipeTime;
-                
-                Vector3 throwDir = TryGetWorldThrow(currentSwipe, mainCam, currentSwipeSpeed);
-                float throwPower = SwipePower(currentSwipeSpeed);
-                
+
+                // store peak speed
+                peakSwipeSpeed = Mathf.Max(peakSwipeSpeed, currentSwipeSpeed);
+
+                Vector3 throwDir = TryGetWorldThrow(currentSwipe, mainCam, peakSwipeSpeed);
+                float throwPower = SwipePower(peakSwipeSpeed);
+
                 Marker.Instance.ShowLine(throwDir, throwPower);
             }
             else
@@ -115,8 +129,11 @@ public class Controller : MonoBehaviour
         }
 
         // Calculate throw direction and power
-        Vector3 dir = TryGetWorldThrow(swipe, mainCam, swipeSpeed);
-        float power = SwipePower(swipeSpeed);
+        // Vector3 dir = TryGetWorldThrow(swipe, mainCam, swipeSpeed);
+        // float power = SwipePower(swipeSpeed);
+
+        float power = SwipePower(peakSwipeSpeed);
+        Vector3 dir = TryGetWorldThrow(swipe, mainCam, peakSwipeSpeed);
         
         SFXManager.Instance.PlayActionThrow();
         Marker.Instance.Throw(dir, power); // finally throw the marker
