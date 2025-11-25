@@ -49,6 +49,18 @@ public class Marker : MonoBehaviour
     float throwTime;                             // when throw started
     float minAirTime = 0.05f;
 
+    [Header("Trajectory Line")]
+    public LineRenderer trajectoryLine;
+    public int trajectoryPoints = 50;
+    public float trajectoryTimeStep = 0.05f;
+    public bool showTrajectory = true;
+
+    [Header("End Point Indicator")]
+    public GameObject endPointIndicator;
+    public bool showEndPoint = true;
+    public float endPointSize = 0.2f;
+    public Vector3 indicatorOffset = new Vector3(0, 1f, 0);
+
     [Header("Alignment & Hit Detection")]
     [SerializeField] float rayMaxDistance = 0.3f;
     public float selfAlignmentThreshold = 0.995f; // how upright this marker must be
@@ -92,20 +104,43 @@ public class Marker : MonoBehaviour
 
         if (curveFalloff == null || curveFalloff.length == 0)
             curveFalloff = AnimationCurve.EaseInOut(0, 1, 1, 0);
+
+        // Setup trajectory line
+        if (trajectoryLine == null)
+        {
+            GameObject lineObj = new GameObject("TrajectoryLine");
+            trajectoryLine = lineObj.AddComponent<LineRenderer>();
+            trajectoryLine.startWidth = 0.05f;
+            trajectoryLine.endWidth = 0.05f;
+            trajectoryLine.material = new Material(Shader.Find("Sprites/Default"));
+            trajectoryLine.startColor = Color.yellow;
+            trajectoryLine.endColor = Color.red;
+        }
+        trajectoryLine.enabled = false;
+
+        // Setup end point indicator
+        if (endPointIndicator == null)
+        {
+            endPointIndicator = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            endPointIndicator.name = "TrajectoryEndPoint";
+            endPointIndicator.transform.localScale = Vector3.one * endPointSize;
+            
+            // Remove collider so it doesn't interfere with physics
+            Destroy(endPointIndicator.GetComponent<Collider>());
+            
+            // Make it visually distinct
+            Renderer renderer = endPointIndicator.GetComponent<Renderer>();
+            renderer.material = new Material(Shader.Find("Standard"));
+            renderer.material.color = Color.red;
+            renderer.material.SetFloat("_Metallic", 0.5f);
+            renderer.material.SetFloat("_Glossiness", 0.8f);
+        }
+        endPointIndicator.SetActive(false);
     }
 
     void LateUpdate()
     {
         HitDetector();
-
-        // if (!isThrown || hasResolvedThrow) return;
-        // if (Time.time - throwTime < minAirTime) return;
-
-        // speed = rb.linearVelocity.magnitude;
-        // // Debug.Log($"speed {speed}, settleSpeed {settleSpeed}, linearVel {rb.linearVelocity}");
-        // if (speed > settleSpeed) return;
-
-        // ResolveThrowResult();
     }
     
     void FixedUpdate()
@@ -123,6 +158,7 @@ public class Marker : MonoBehaviour
         rb.AddForce(liftDir * curveForce * fade, ForceMode.Force);
 
     }
+    
     private void HitDetector()
     {
         RaycastHit hit;
@@ -144,9 +180,9 @@ public class Marker : MonoBehaviour
         if (!onTargetLayer)
         {
             if (!isRecovering) SetTimeAndAudioNormal();
-            Debug.Log("hit something, but NOT on targetLayer"); return;
+            Debug.Log("hit something, but NOT on targetLayer"); 
+            return;
         }
-        Debug.Log($"raycast hit {hit.collider.name} on layer {hit.collider.gameObject.layer}, distance {hit.distance}");
 
         Vector2 markerXZ = new Vector2(transform.position.x, transform.position.z);
 
@@ -160,10 +196,9 @@ public class Marker : MonoBehaviour
 
         float centerDistance = Vector2.Distance(markerXZ, targetXZ);
 
-        Debug.Log($"centerDistance = {centerDistance}, snapRadius = {snapRadius}, nearMissRadius = {nearMissRadius}");
-        // perfect stack
         if (centerDistance <= snapRadius)
         {
+            Debug.Log($"{centerDistance} <= {snapRadius}");
             Debug.Log("stack success: upright + close enough");
             AttachTo(hit.collider.gameObject);
             isGrounded = true;
@@ -175,12 +210,13 @@ public class Marker : MonoBehaviour
             if (isRecovering) return;
 
             CameraController.Instance.EnableCloseUp();
-            StartCoroutine(FreezeAndRecover()); return;
+            StartCoroutine(FreezeAndRecover()); 
+            return;
         }
         
-        // near miss -> slow-mo fail (no snap) 
         if (centerDistance <= nearMissRadius)
         {
+            Debug.Log($"{centerDistance} <= {snapRadius}");
             Debug.Log("near miss: upright but offset (slow-mo fail)");
             isGrounded = true;
             SFXManager.Instance.StopAllSfx();
@@ -192,8 +228,10 @@ public class Marker : MonoBehaviour
             }
             return;
         }
-        // too far -> normal land, no slow - mo 
-        Debug.Log("wide miss: treat as normal ground contact"); isGrounded = true; if (!isRecovering) SetTimeAndAudioNormal();
+
+        Debug.Log("wide miss: treat as normal ground contact"); 
+        isGrounded = true; 
+        if (!isRecovering) SetTimeAndAudioNormal();
     }
 
     public void TestSlowMo()
@@ -242,7 +280,6 @@ public class Marker : MonoBehaviour
         CameraController.Instance.DisableCloseUp();
     }
 
-
     void ResetRigidBodyMovement()
     {
         rb.linearVelocity = Vector3.zero;
@@ -253,7 +290,6 @@ public class Marker : MonoBehaviour
     public void ResetMarker()
     {
         rb.interpolation = RigidbodyInterpolation.None;
-        //Debug.Log("Resetting Marker");
         Time.timeScale = 1f;
         AudioManager.Instance.musicMixer.SetFloat("MyExposedParam", 1f);
         if (!AudioManager.Instance.IsPlaying())
@@ -275,6 +311,10 @@ public class Marker : MonoBehaviour
         rb.MoveRotation(originalRot);
         CameraController.Instance.StopRotation();
         StopCoroutine(FreezeAndRecover());
+        
+        // Hide trajectory line when reset
+        if (trajectoryLine != null)
+            trajectoryLine.enabled = false;
     }
 
     void OnCollisionEnter(Collision collision)
@@ -310,7 +350,6 @@ public class Marker : MonoBehaviour
 
         transform.position = marker.targetTransform.position;
         transform.rotation = marker.targetTransform.rotation;
-        // transform.SetParent(marker.targetTransform);
         gameObject.isStatic = true;
     }
 
@@ -346,7 +385,12 @@ public class Marker : MonoBehaviour
 
     public void Throw(Vector3 dir, float power)
     {
-        //Debug.Log($"Throwing {dir} {power}");
+        // Hide trajectory line when thrown
+        if (trajectoryLine != null)
+            trajectoryLine.enabled = false;
+
+        if (endPointIndicator != null)
+            endPointIndicator.SetActive(false);
 
         rb.linearVelocity = Vector3.zero;
         rb.angularVelocity = Vector3.zero;
@@ -368,6 +412,68 @@ public class Marker : MonoBehaviour
         rb.AddForce(Vector3.down * 3f, ForceMode.Impulse);
     }
 
+    public void ShowLine(Vector3 throwDir, float power)
+    {
+        if (!showTrajectory || trajectoryLine == null) return;
+
+        trajectoryLine.enabled = true;
+        Vector3[] points = new Vector3[trajectoryPoints];
+
+        // Calculate initial velocity (matching your Throw method)
+        Vector3 forceDir = throwDir.normalized;
+        Vector3 initialVelocity = forceDir * power * impulseScale;
+        initialVelocity += Vector3.down * 3f; // Account for the downward force
+        
+        Vector3 position = transform.position;
+        Vector3 velocity = initialVelocity;
+        Vector3 lastValidPosition = position;
+
+        for (int i = 0; i < trajectoryPoints; i++)
+        {
+            points[i] = position;
+            lastValidPosition = position;
+
+            // Apply gravity
+            velocity += Physics.gravity * trajectoryTimeStep;
+            
+            // Update position
+            position += velocity * trajectoryTimeStep;
+
+            // Stop if trajectory goes too low
+            if (position.y < -5f) 
+            {
+                trajectoryLine.positionCount = i + 1;
+                trajectoryLine.SetPositions(points);
+                
+                // Position end point indicator at last valid position
+                if (showEndPoint && endPointIndicator != null)
+                {
+                    endPointIndicator.SetActive(true);
+                    endPointIndicator.transform.position = lastValidPosition + indicatorOffset;
+                }
+                return;
+            }
+        }
+
+        trajectoryLine.positionCount = trajectoryPoints;
+        trajectoryLine.SetPositions(points);
+        
+        // Position end point indicator at final position
+        if (showEndPoint && endPointIndicator != null)
+        {
+            endPointIndicator.SetActive(true);
+            endPointIndicator.transform.position = lastValidPosition;
+        }
+    }
+
+    public void HideLine()
+    {
+        if (trajectoryLine != null)
+            trajectoryLine.enabled = false;
+        if (endPointIndicator != null)
+            endPointIndicator.SetActive(false);
+    }
+
     public void DebugThrow()
     {
         Quaternion newRot = new Quaternion(40f, transform.rotation.y, transform.rotation.z, pickupRot);
@@ -375,6 +481,7 @@ public class Marker : MonoBehaviour
         Throw(debugThrow, 1f);
         Controller.Instance.ObjectThrown.Invoke();
     }
+
     public void DebugLand()
     {
         Debug.Log("stack success: upright + slow on target top");

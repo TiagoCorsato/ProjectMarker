@@ -3,6 +3,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.EnhancedTouch;
 using UnityEngine.Events;
 using System;
+
 public class Controller : MonoBehaviour
 {
     [SerializeField] InputSystem_Actions inputActions;
@@ -40,13 +41,11 @@ public class Controller : MonoBehaviour
         inputActions.Player.TouchPosition.performed -= OnTouchMoved;
     }
 
-    private void Start() 
-    {
-        
-    }
     void OnTouchStarted(InputAction.CallbackContext context)
     {
-        var cam = Camera.main; if (!cam) return;
+        var cam = Camera.main; 
+        if (!cam) return;
+        
         var pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
         startPos = pos;
         swipeStartTime = Time.time;
@@ -54,18 +53,43 @@ public class Controller : MonoBehaviour
         var ray = cam.ScreenPointToRay(pos);
         if (Physics.Raycast(ray, out var hit))
         {
-            Debug.DrawLine(ray.origin, hit.point, Color.cyan,  rayDur);
+            Debug.DrawLine(ray.origin, hit.point, Color.cyan, rayDur);
             Debug.DrawRay(hit.point, hit.normal * 0.25f, Color.magenta, rayDur);
-            if (hit.transform.CompareTag("ThrowObject")) Marker.Instance.BeginPickup(hit, cam);
+            if (hit.transform.CompareTag("ThrowObject")) 
+                Marker.Instance.BeginPickup(hit, cam);
         }
         Debug.DrawLine(ray.origin, ray.origin + ray.direction * rayMax, Color.yellow, rayDur);
     }
 
     private void OnTouchMoved(InputAction.CallbackContext context)
     {
-        var mainCam = Camera.main; if (!mainCam) return;
+        var mainCam = Camera.main; 
+        if (!mainCam) return;
+        
         Vector2 pos = inputActions.Player.TouchPosition.ReadValue<Vector2>();
         Marker.Instance.WhilePickedUp(pos, mainCam, Time.deltaTime);
+
+        // Show trajectory preview while dragging
+        if (Marker.Instance.isHeld)
+        {
+            Vector2 currentSwipe = pos - startPos;
+            
+            // Only show trajectory if there's meaningful swipe distance
+            if (currentSwipe.magnitude > 30f)
+            {
+                float currentSwipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
+                float currentSwipeSpeed = currentSwipe.magnitude / currentSwipeTime;
+                
+                Vector3 throwDir = TryGetWorldThrow(currentSwipe, mainCam, currentSwipeSpeed);
+                float throwPower = SwipePower(currentSwipeSpeed);
+                
+                Marker.Instance.ShowLine(throwDir, throwPower);
+            }
+            else
+            {
+                Marker.Instance.HideLine();
+            }
+        }
     }
 
     // When touch is released
@@ -75,28 +99,26 @@ public class Controller : MonoBehaviour
         
         var mainCam = Camera.main;
         if (!mainCam) return;
+        
         Vector2 end = inputActions.Player.TouchPosition.ReadValue<Vector2>();
         Vector2 swipe = end - startPos; // capture the swipe pos. 
 
 
         float swipeTime = Mathf.Max(Time.time - swipeStartTime, 0.01f);
-
         float swipeSpeed = swipe.magnitude / swipeTime;
-        // Debug.Log($"Swipe speed: {swipeSpeed}");
-
-        // minimum distance threshold
-        if (swipe.magnitude < 30f)
+        
+        // Minimum distance threshold
+        if (swipe.magnitude < 30f && swipeTime < 0.2f)
         {
             Marker.Instance.EndPickup(); // release the marker and exit
             return;
         }
 
-        // calculate throw direction and power
+        // Calculate throw direction and power
         Vector3 dir = TryGetWorldThrow(swipe, mainCam, swipeSpeed);
         float power = SwipePower(swipeSpeed);
-        // AudioManager.Instance.PauseBgm();
+        
         SFXManager.Instance.PlayActionThrow();
-        // SFXManager.Instance.PlayThrowBGM();
         Marker.Instance.Throw(dir, power); // finally throw the marker
         ObjectThrown.Invoke();
     }
