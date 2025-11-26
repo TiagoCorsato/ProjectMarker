@@ -176,6 +176,8 @@ public class Marker : MonoBehaviour
             return;
         }
 
+        Debug.Log($"RAYCAST HIT at distance: {hit.distance}");
+
         bool onTargetLayer = (targetLayer.value & (1 << hit.collider.gameObject.layer)) != 0;
         if (!onTargetLayer)
         {
@@ -198,7 +200,7 @@ public class Marker : MonoBehaviour
 
         if (centerDistance <= snapRadius)
         {
-            Debug.Log($"{centerDistance} <= {snapRadius}");
+            Debug.Log($"Success: {centerDistance} <= {snapRadius}");
             Debug.Log("stack success: upright + close enough");
             AttachTo(hit.collider.gameObject);
             isGrounded = true;
@@ -213,10 +215,9 @@ public class Marker : MonoBehaviour
             StartCoroutine(FreezeAndRecover()); 
             return;
         }
-        
-        if (centerDistance <= nearMissRadius)
+        else if (centerDistance <= nearMissRadius)
         {
-            Debug.Log($"{centerDistance} <= {snapRadius}");
+            Debug.Log($"Near miss: {centerDistance} <= {snapRadius}");
             Debug.Log("near miss: upright but offset (slow-mo fail)");
             isGrounded = true;
             SFXManager.Instance.StopAllSfx();
@@ -226,7 +227,7 @@ public class Marker : MonoBehaviour
                 CameraController.Instance.EnableCloseUp(); 
                 StartCoroutine(FreezeAndRecover()); 
             }
-            return;
+            //return;
         }
 
         Debug.Log("wide miss: treat as normal ground contact"); 
